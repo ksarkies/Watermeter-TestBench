@@ -1,71 +1,96 @@
 
-/*    Flow Bench Measurement and Transmission
+/*    flow Bench Measurement and Transmission
 
-K W Sarkies 2015
+Firmware for measurement of physical quantities in a water flow apparatus for 
+testing a water meter.
+
+K W Sarkies 28/1/2015
+Paul Rix
+
+Tested on: Arduino Uno ATMega328 at 16MHz.
 
 Flow meter FS200A, 450 counts per litre, 25 litres/minute max, pulse rate 188Hz max.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header 3 of
 the Arduino Sensor Shield
 
 A timer ISR at 1kHz detects rising edge changes in the flowmeter signal and
-counts the number of pulses over a given time period (1 second). Divide by
-450*60 to get the number of litres per minute.
+measures the time between rising edges of the pulses. Result is averaged over
+the time between transmissions if more than one pulse is present.
 
-Pressure sensor unknown. 1.2MPa.
+Pressure sensor unknown. 0.5V - 4.5V for 0MPa - 1.2MPa.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header A0 of
-the Arduino Sensor Shield. Read once per second.
+the Arduino Sensor Shield.
 
 Temperature sensor PT50 platinum wire plus bridge to current loop 4-20mA.
 240 ohm resistor gives 0-5V.
 Connect three pin plug (black = gnd, red = 5V, yellow = signal) to header A1 of
-the Arduino Sensor Shield. Read once per second.
+the Arduino Sensor Shield.
 
 Start switch normally high, momentarily low.
-NB need to hold the button down for at least a second for detection.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header 4 of
-the Arduino Sensor Shield
+the Arduino Sensor Shield.
 
 Solenoid 2W-200-20 high is off, low is on.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header 5 of
-the Arduino Sensor Shield
+the Arduino Sensor Shield.
 
+Transmission of data is csv ASCII without leading zeros and CR terminated:
+- sample time in ISO date format,
+- sample time fractional seconds
+- flow meter period 32 bits,
+- pressure sensor 16 bits,
+- temperature sensor 16 bits,
+- test meter period 32 bits,
+- Switch position 1 bit.
+
+NOTE: do NOT use the Arduino serial monitor. Use putty or another monitor on /dev/ttyACM0.
 */
 
-#define reed 3                          // pin connected to reed switch
-#define pushbutton 4
-#define solenoid 5
+#include <Wire.h>
+#include "RTClib.h"
 
-unsigned int running = 0;               // experiment is running
-unsigned int reedVal;
-unsigned long count = 0.00;             // pulse count for flowmeter
-unsigned int switchVal;
-unsigned int oldSwitchVal;
+RTC_DS1307 rtc;
+
+#define FLOWMETER 3                          // pin connected to flowmeter switch
+#define PUSHBUTTON 4
+#define SOLENOID 5
+#define PRESSURE A0
+#define TEMPERATURE A1
+#define BAUDRATE 38400
+
+unsigned int running = 0;               // Experiment is running
+unsigned int flowmeterVal;              // Level of flowmeter switch
+unsigned long flowmeterPeriod = 0;      // Period between flowmeter pulses
+unsigned int flowmeterCount = 0;        // Pulse count for flowmeter
+unsigned long tick = 0;                 // Tick time in ms for flowmeter period
+unsigned int timetick = 0;              // Clock fractional seconds in ms
+unsigned int lastSecond = 0;
+unsigned int switchVal;                 // Level of switch input
+unsigned int lastSwitchVal;             // Previous level of switch input
 unsigned int cycleTime;                 // 10 capture cycles per second for sending data
 
 void setup(){
-  
+
+// Set I/O ports as input or output
   pinMode(1,OUTPUT);                    // tx
-  pinMode(reed,INPUT);                  // reed switch
-  pinMode(pushbutton,INPUT);            // start switch
-  pinMode(solenoid,OUTPUT);             // solenoid
-  
- 
-  Serial.write(12);                     // clear screen
-  
+  pinMode(FLOWMETER,INPUT);             // flowmeter switch
+  pinMode(PUSHBUTTON,INPUT);            // start switch
+  pinMode(SOLENOID,OUTPUT);             // solenoid
+
 /* TIMER SETUP- the timer interrupt allows precise timed measurements of the
-reed switch for more info about configuration of arduino timers see
+Flowmeter switch for more info about configuration of arduino timers see
 http://arduino.cc/playground/Code/Timer1
 */
   
   cli();                               // stop interrupts
 
 //set timer1 interrupt at 1kHz
-  TCCR1A = 0;// set entire TCCR1A register to 0
-  TCCR1B = 0;// set entire TCCR1B register to 0  
-  TCNT1  = 0;//initialize counter value to 0;
+  TCCR1A = 0;        // set entire TCCR1A register to 0
+  TCCR1B = 0;        // set entire TCCR1B register to 0  
+  TCNT1  = 0;        //initialize counter value to 0;
   
 // set timer count for 1khz increments
-  OCR1A = 1999;                      // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt with prescale 8
+  OCR1A = 1999;      // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt with prescale 8
 // turn on CTC mode (clear timer OCR1A on compare match)
   TCCR1B |= (1 << WGM12);
 // Set CS11 bit for 8 times prescale
@@ -73,68 +98,114 @@ http://arduino.cc/playground/Code/Timer1
 // enable timer compare interrupt
   TIMSK1 |= (1 << OCIE1A);
   
-  sei();                              // allow interrupts
+  sei();             // allow interrupts
 //END TIMER SETUP
+
+  switchVal = digitalRead(PUSHBUTTON);
+  lastSwitchVal = switchVal;
   
-  switchVal = digitalRead(pushbutton);
-  oldSwitchVal = switchVal;
+  Serial.begin(BAUDRATE);
+
+#ifdef AVR
+  Wire.begin();  // Arduinos with AVR microcontrollers
+#else
+  Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+#endif
+  rtc.begin();
   
-  Serial.begin(57600);
+/* This sets the RTC with a compile date & time taken from FLASH. Accuracy depends on the
+time between compilation and upload being negligible. It will reset to this value each
+time the processor is reset unless the RTC is battery backed.
+Chronodot needs CR1620 to CR1632. */
+//  if (! rtc.isrunning()) {
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));   
+//  }
+  lastSecond = rtc.now().second();
+  timetick = 0;
 }
 
-/* On interrupt, see if the meter signal has changed from low to high. If so,
-register a count. */
+/* 1 ms clock interrupt.
+On interrupt, see if the flowmeter signal has changed from low to high. If so,
+register a count and period. */
 
-ISR(TIMER1_COMPA_vect) {                // Interrupt at freq of 1kHz to measure reed switch
-  static int oldReedVal = 0;
-  int reedVal = digitalRead(reed);      // Signal input
-  if ((reedVal > 0) && (oldReedVal == 0)) {
-    count++;                            // New pulse, add to pulse count
+ISR(TIMER1_COMPA_vect) {
+  static int lastFlowmeterVal = 0;
+  static long lastFlowmeterTime = 0;
+  timetick++;
+  tick++;
+  int flowmeterVal = digitalRead(FLOWMETER);     // Flowmeter signal input
+  if ((flowmeterVal == 0) && (lastFlowmeterVal > 0)) {
+    flowmeterCount++;                            // New pulse, add to pulse count
+    flowmeterPeriod = tick - lastFlowmeterTime;
+    lastFlowmeterTime = tick;
   }
-  oldReedVal = reedVal;
-}
-
-void displayCount(int count){
-//  Serial.write(12);//clear
-  Serial.print("Flow = ");
-  Serial.print(count);
-  Serial.println(" pulses ");
-//  Serial.print((float)count*1000/(450*60));
-//  Serial.write(" millilitres per minute ");
-  
+  lastFlowmeterVal = flowmeterVal;
 }
 
 void loop(){
 
 // Check if the run is to start or stop looking for rising edge on switch signal
-  switchVal = digitalRead(pushbutton);
-  if ((switchVal == 0) && (oldSwitchVal > 0))
-    running = ~running;
-  oldSwitchVal = switchVal;
+  switchVal = digitalRead(PUSHBUTTON);
+  if ((switchVal == 0) && (lastSwitchVal > 0)) running = ~running;
+  lastSwitchVal = switchVal;
+
+  DateTime now = rtc.now();
+  if (now.second() != lastSecond) {
+    timetick = 0;
+    lastSecond = now.second();
+  }
  
   if (running > 0) {
-    digitalWrite(solenoid,LOW);
+    digitalWrite(SOLENOID,LOW);
+
     if  (cycleTime++ > 10) {
+    
+      Serial.print(now.year(), DEC);
+      Serial.print('-');
+      Serial.print(now.month(), DEC);
+      Serial.print('-');
+      Serial.print(now.day(), DEC);
+      Serial.print('T');
+      Serial.print(now.hour(), DEC);
+      Serial.print(':');
+      Serial.print(now.minute(), DEC);
+      Serial.print(':');
+      Serial.print(now.second(), DEC);
+      Serial.print(".");
+      if (timetick < 100)
+        Serial.print('0');
+      if (timetick < 10)
+        Serial.print('0');
+      Serial.print(timetick, DEC);
+      Serial.print(",");
+
 // Protect and capture flowmeter count value and reset it.
       cli();
-      int currentCount = count;
-      count = 0;
+      int currentCount = flowmeterCount;
+      flowmeterCount = 0;
       sei();
-      displayCount(currentCount);
+      Serial.print(currentCount);
+      Serial.print(",");
+
+// Print flow meter period last measured.
+      Serial.print(flowmeterPeriod);
+      Serial.print(",");
 
 // Print pressure value
-      Serial.write(" Pressure = ");
-      Serial.println(analogRead(A0));
+      Serial.print(analogRead(PRESSURE));
+      Serial.print(",");
     
-// Print pressure value
-      Serial.write(" Temperature = ");
-      Serial.println(analogRead(A1));
+// Print temperature value
+      Serial.print(analogRead(TEMPERATURE));
+//      Serial.print(",");
     
+      Serial.println("");
+
       cycleTime = 0;
     }
   }
   else
-        digitalWrite(solenoid,HIGH);
-  delay(100);
+        digitalWrite(SOLENOID,HIGH);
+  delay(10);
 }
 
