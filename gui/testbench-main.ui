@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WatermeterTestbenchDialog</class>
+ <widget class="QDialog" name="WatermeterTestbenchDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>620</width>
+    <height>463</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QPushButton" name="closePushButton">
+   <property name="geometry">
+    <rect>
+     <x>316</x>
+     <y>295</y>
+     <width>90</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="title">
+   <property name="geometry">
+    <rect>
+     <x>152</x>
+     <y>30</y>
+     <width>309</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Andale Mono</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Watermeter Test Bench</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="flowRate">
+   <property name="geometry">
+    <rect>
+     <x>306</x>
+     <y>135</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pressure">
+   <property name="geometry">
+    <rect>
+     <x>198</x>
+     <y>135</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="meterFlowLabel">
+   <property name="geometry">
+    <rect>
+     <x>414</x>
+     <y>200</y>
+     <width>101</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Meter Flow l/m</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="temperature">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>135</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="flowRateLabel">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>200</y>
+     <width>95</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Flow Rate l/m</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="startPushButton">
+   <property name="geometry">
+    <rect>
+     <x>262</x>
+     <y>230</y>
+     <width>77</width>
+     <height>46</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Start/Stop</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="openPushButton">
+   <property name="geometry">
+    <rect>
+     <x>202</x>
+     <y>295</y>
+     <width>90</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="timeDisplay">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>80</y>
+     <width>127</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="temperatureLabel">
+   <property name="geometry">
+    <rect>
+     <x>84</x>
+     <y>200</y>
+     <width>103</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Temperature C</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="meterFlow">
+   <property name="geometry">
+    <rect>
+     <x>414</x>
+     <y>135</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pressureLabel">
+   <property name="geometry">
+    <rect>
+     <x>196</x>
+     <y>200</y>
+     <width>103</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Pressure (ATM)</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
