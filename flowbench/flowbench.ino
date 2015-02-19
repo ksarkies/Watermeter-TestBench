@@ -22,7 +22,7 @@ Connect three pin plug (black = gnd, red = 5V, white = signal) to header A0 of
 the Arduino Sensor Shield.
 
 Temperature sensor PT50 platinum wire plus bridge to current loop 4-20mA.
-240 ohm resistor gives 0-5V.
+240 ohm resistor gives 1-5V.
 Connect three pin plug (black = gnd, red = 5V, yellow = signal) to header A1 of
 the Arduino Sensor Shield.
 
@@ -35,8 +35,8 @@ Connect three pin plug (black = gnd, red = 5V, white = signal) to header 5 of
 the Arduino Sensor Shield.
 
 Transmission of data is csv ASCII without leading zeros and CR terminated:
-- sample time in ISO date format,
-- sample time fractional seconds
+- sample time in ISO date format plus fractional seconds,
+- flow meter count 16 bits,
 - flow meter period 32 bits,
 - pressure sensor 16 bits,
 - temperature sensor 16 bits,
@@ -59,10 +59,9 @@ RTC_DS1307 rtc;
 #define BAUDRATE 38400
 
 unsigned int running = 0;               // Experiment is running
-unsigned int flowmeterVal;              // Level of flowmeter switch
 unsigned long flowmeterPeriod = 0;      // Period between flowmeter pulses
+unsigned long flowmeterPeriodSum = 0;
 unsigned int flowmeterCount = 0;        // Pulse count for flowmeter
-unsigned long tick = 0;                 // Tick time in ms for flowmeter period
 unsigned int timetick = 0;              // Clock fractional seconds in ms
 unsigned int lastSecond = 0;
 unsigned int switchVal;                 // Level of switch input
@@ -129,14 +128,19 @@ On interrupt, see if the flowmeter signal has changed from low to high. If so,
 register a count and period. */
 
 ISR(TIMER1_COMPA_vect) {
-  static int lastFlowmeterVal = 0;
-  static long lastFlowmeterTime = 0;
-  timetick++;
+  static unsigned int lastFlowmeterVal = 0;
+  static unsigned long lastFlowmeterTime = 0;
+  static unsigned long tick = 0;                 // Tick time in ms for flowmeter period
+  timetick++;                                    // Tick time for improved RTC precision
   tick++;
+// Flowmeter period
   int flowmeterVal = digitalRead(FLOWMETER);     // Flowmeter signal input
   if ((flowmeterVal == 0) && (lastFlowmeterVal > 0)) {
     flowmeterCount++;                            // New pulse, add to pulse count
-    flowmeterPeriod = tick - lastFlowmeterTime;
+    flowmeterPeriod = tick - lastFlowmeterTime - 1;
+    if (flowmeterCount > 1) {
+      flowmeterPeriodSum += flowmeterPeriod;
+    }
     lastFlowmeterTime = tick;
   }
   lastFlowmeterVal = flowmeterVal;
@@ -162,14 +166,19 @@ void loop(){
     
       Serial.print(now.year(), DEC);
       Serial.print('-');
+      if (now.month() < 10) Serial.print('0');
       Serial.print(now.month(), DEC);
       Serial.print('-');
+      if (now.day() < 10) Serial.print('0');
       Serial.print(now.day(), DEC);
       Serial.print('T');
+      if (now.hour() < 10) Serial.print('0');
       Serial.print(now.hour(), DEC);
       Serial.print(':');
+      if (now.minute() < 10) Serial.print('0');
       Serial.print(now.minute(), DEC);
       Serial.print(':');
+      if (now.second() < 10) Serial.print('0');
       Serial.print(now.second(), DEC);
       Serial.print(".");
       if (timetick < 100)
@@ -179,8 +188,14 @@ void loop(){
       Serial.print(timetick, DEC);
       Serial.print(",");
 
-// Protect and capture flowmeter count value and reset it.
+/* Protect and capture flowmeter count and period average values and reset them.
+The flowmeter period is averaged if more than two pulses occur, otherwise
+the last measured period is used. */
       cli();
+      if (flowmeterCount > 2) {
+        flowmeterPeriod = flowmeterPeriodSum/(flowmeterCount - 1);
+        flowmeterPeriodSum = 0;
+      }
       int currentCount = flowmeterCount;
       flowmeterCount = 0;
       sei();
