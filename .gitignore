@@ -29,6 +29,5 @@ qrc_*
 Makefile
 *.cmd
 *.net
-power-management
-power-management-tcp
+testbench
 

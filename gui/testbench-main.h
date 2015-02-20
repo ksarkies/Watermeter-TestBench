@@ -51,14 +51,18 @@ public:
     QString error();
 private slots:
     void onDataAvailable();
+    void on_saveFileButton_clicked();
+    void on_closeFileButton_clicked();
+    void on_startPushButton_clicked();
 private:
 // User Interface object instance
     Ui::WatermeterTestbenchDialog TestbenchMainUi;
 // Methods
     void displayErrorMessage(const QString message);
     void processResponse(const QString response);
+    void saveLine(QString line);    // Save line to a file
 // Variables
-    SerialPort* socket;           //!< Serial port object pointer
+    SerialPort* socket;             //!< Serial port object pointer
     uint baudrate;
     QString response;
     quint16 blockSize;
@@ -66,6 +70,7 @@ private:
     QDir saveDirectory;
     QString saveFile;
     QFile* outFile;
+    bool recordingActive;
     bool synchronized;
     QString errorMessage;
     char timeTick;

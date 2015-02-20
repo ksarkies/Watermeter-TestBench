@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QPushButton" name="closePushButton">
+  <widget class="QPushButton" name="closeFileButton">
    <property name="geometry">
     <rect>
      <x>316</x>
@@ -162,10 +162,10 @@
     </rect>
    </property>
    <property name="text">
-    <string>Start/Stop</string>
+    <string>Start</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="openPushButton">
+  <widget class="QPushButton" name="saveFileButton">
    <property name="geometry">
     <rect>
      <x>202</x>
@@ -256,6 +256,19 @@
    </property>
    <property name="text">
     <string>Pressure (ATM)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="errorLabel">
+   <property name="geometry">
+    <rect>
+     <x>74</x>
+     <y>421</y>
+     <width>473</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
    </property>
   </widget>
  </widget>

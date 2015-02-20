@@ -54,7 +54,7 @@ file
 */
 
 TestbenchGui::TestbenchGui(QString inPort, uint baudrate,
-                                       QWidget* parent) : QDialog(parent)
+                           QWidget* parent) : QDialog(parent)
 {
     TestbenchMainUi.setupUi(this);
     socket = new SerialPort(inPort);
@@ -65,6 +65,9 @@ TestbenchGui::TestbenchGui(QString inPort, uint baudrate,
         errorMessage = QString("Unable to access the serial port\n"
                             "Check the connections and power.\n"
                             "You may need root privileges?");
+    TestbenchMainUi.startPushButton->setText("Start");
+    TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+    recordingActive = false;
 }
 
 TestbenchGui::~TestbenchGui()
@@ -108,13 +111,13 @@ void TestbenchGui::processResponse(const QString response)
     QStringList breakdown = response.split(",");
     int size = breakdown.size();
 
-// Time from ISO formatted date-time.
-    QString timeStamp = breakdown[0].simplified().mid(11,8);
-    TestbenchMainUi.timeDisplay->setText(timeStamp);
+// Extract time from ISO 8601 formatted date-time.
+    QString timeStamp = breakdown[0].simplified();
+//    TestbenchMainUi.timeDisplay->setText(timeStamp.mid(11,8));
 
 /* Flow meter count and period. These are processed further to derive a
 flow rate by selecting the most accurate measure. 
-Datasheet for the FS200A gives 450 counts per litre.
+Datasheet for the FS200A specifies 450 counts per litre.
 Count is number of pulses in 10ms, period is in ms. */
     int flowMeterCount = breakdown[1].simplified().toInt();
     long flowMeterPeriod = breakdown[2].simplified().toLong();
@@ -135,6 +138,122 @@ Results given in ATM */
     int tempval = breakdown[4].simplified().toInt();
     float temperature = 26.0+((float)tempval-716.0)/15.07;
     TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',1));
+
+/* Get local time in ISO 8601 format. */
+    QString timeString = QDateTime::currentDateTime().toString(Qt::ISODate);
+    TestbenchMainUi.timeDisplay->setText(timeString.mid(11,8));
+
+/* Save the response with timestamp stripped and replaced wth local time. */
+    QString line = timeString + ',' + response.mid(response.indexOf(",")+1);
+    if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Activate the Start/Stop Recording button.
+
+*/
+
+void TestbenchGui::on_startPushButton_clicked()
+{
+    recordingActive = (TestbenchMainUi.startPushButton->text() == "Start");
+    if (recordingActive)
+    {
+        TestbenchMainUi.startPushButton->setText("Stop");
+        TestbenchMainUi.startPushButton->setStyleSheet("background-color:red;");
+    }
+    else
+    {
+        TestbenchMainUi.startPushButton->setText("Start");
+        TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Obtain a save file name and path and attempt to open it.
+
+The files are csv but the ending can be arbitrary to allow compatibility
+with the data processing application.
+*/
+
+void TestbenchGui::on_saveFileButton_clicked()
+{
+//! Make sure there is no file already open.
+    if (! saveFile.isEmpty())
+    {
+        displayErrorMessage("A file is already open - close first");
+        return;
+    }
+    TestbenchMainUi.errorLabel->clear();
+    QString filename = QFileDialog::getSaveFileName(this,
+                        "Save Acquired Data",
+                        QString(),
+                        "Comma Separated Variables (*.csv *.txt)");
+    if (filename.isEmpty()) return;
+//    if (! filename.endsWith(".csv")) filename.append(".csv");
+    QFileInfo fileInfo(filename);
+    saveDirectory = fileInfo.absolutePath();
+    saveFile = saveDirectory.filePath(filename);
+    outFile = new QFile(saveFile);             // Open file for output
+    if (! outFile->open(QIODevice::WriteOnly))
+    {
+        displayErrorMessage("Could not open the output file");
+        return;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Save a line to the opened save file.
+
+*/
+void TestbenchGui::saveLine(QString line)
+{
+//! Check that the save file has been defined and is open.
+    if (saveFile.isEmpty())
+    {
+        displayErrorMessage("Output File not defined");
+        return;
+    }
+    if (! outFile->isOpen())
+    {
+        displayErrorMessage("Output File not open");
+        return;
+    }
+/* If either of the last two characters are \n or \r, strip them out. */
+    if (line.endsWith("\n") || line.endsWith("\r"))
+        line = line.remove(1);
+    if (line.endsWith("\n") || line.endsWith("\r"))
+        line = line.remove(1);
+
+    QTextStream out(outFile);
+    out << line << "\n\r";
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Close the save file.
+
+*/
+void TestbenchGui::on_closeFileButton_clicked()
+{
+    TestbenchMainUi.errorLabel->clear();
+    if (saveFile.isEmpty())
+        displayErrorMessage("File already closed");
+    else
+    {
+        outFile->close();
+        delete outFile;
+//! Save the name to prevent the same file being used.
+        saveFile = QString();
+    }
+}
+//-----------------------------------------------------------------------------
+/** @brief Show an error condition in the Error label.
+
+@param[in] message: Message to be displayed.
+*/
+
+void TestbenchGui::displayErrorMessage(const QString message)
+{
+    TestbenchMainUi.errorLabel->setText(message);
 }
 
 //-----------------------------------------------------------------------------
