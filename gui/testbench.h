@@ -28,8 +28,4 @@
 #ifndef TESTBENCH_H
 #define TESTBENCH_H
 
-// Particular serial port to use
-#define SERIAL_PORT "/dev/ttyACM0"
-#define BAUDRATE 4
-
 #endif

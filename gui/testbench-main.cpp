@@ -42,6 +42,7 @@ file
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QDebug>
 #include <cstdlib>
 #include <iostream>
@@ -53,25 +54,116 @@ file
 @param[in] parent Parent widget.
 */
 
-TestbenchGui::TestbenchGui(QString inPort, uint baudrate,
-                           QWidget* parent) : QDialog(parent)
+TestbenchGui::TestbenchGui(QWidget* parent) : QDialog(parent)
 {
     TestbenchMainUi.setupUi(this);
-    socket = new SerialPort(inPort);
-    connect(socket, SIGNAL(readyRead()), this, SLOT(onDataAvailable()));
-    if (socket->initPort(baudrate,100))
-        synchronized = true;
-    else
-        errorMessage = QString("Unable to access the serial port\n"
-                            "Check the connections and power.\n"
-                            "You may need root privileges?");
+    setComboBoxes();
+    QStringList baudrates;
+    baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    TestbenchMainUi.baudrate1ComboBox->addItems(baudrates);
+    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE);
+    TestbenchMainUi.baudrate2ComboBox->addItems(baudrates);
+    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE);
+
     TestbenchMainUi.startPushButton->setText("Start");
     TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
     recordingActive = false;
+    socket1 = NULL;
+    socket2 = NULL;
 }
 
 TestbenchGui::~TestbenchGui()
 {
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Setup comboboxes
+
+Test existence of serial port (ACM and USB) and build both combobox entries.
+Different ports are checked on Windows and Linux.
+*/
+
+void TestbenchGui::setComboBoxes()
+{
+#ifdef Q_OS_LINUX
+    QString port;
+    TestbenchMainUi.input1ComboBox->clear();
+    TestbenchMainUi.input2ComboBox->clear();
+    for (int i=3; i>=0; i--)
+    {
+        port = "/dev/ttyUSB"+QString::number(i);
+        QFileInfo checkUSBFile1(port);
+        if (checkUSBFile1.exists())
+            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+        port = "/dev/ttyACM"+QString::number(i);
+        QFileInfo checkACMFile1(port);
+        if (checkACMFile1.exists())
+            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+        port = "/dev/ttyUSB"+QString::number(i);
+        QFileInfo checkUSBFile2(port);
+        if (checkUSBFile2.exists())
+            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+        port = "/dev/ttyACM"+QString::number(i);
+        QFileInfo checkACMFile2(port);
+        if (checkACMFile2.exists())
+            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+    }
+#else
+#endif
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Connect to selected serial port 1
+
+*/
+
+void TestbenchGui::on_connect1_clicked()
+{
+    QString inPort1 = TestbenchMainUi.input1ComboBox->currentText();
+    baudrate1 = BAUDRATE;
+
+    if (socket1 != NULL)
+    {
+        disconnect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
+        delete socket1;
+        socket1 = NULL;
+        TestbenchMainUi.connect1->setText("Connect");
+    }
+    else
+    {
+        socket1 = new SerialPort(inPort1);
+        connect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
+        socket1->initPort(baudrate1,100);
+        TestbenchMainUi.connect1->setText("Disconnect");
+    }
+    setComboBoxes();        // Rebuild combobox entries
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Connect to selected serial port 2
+
+*/
+
+void TestbenchGui::on_connect2_clicked()
+{
+    QString inPort2 = TestbenchMainUi.input2ComboBox->currentText();
+    baudrate2 = BAUDRATE;
+
+    if (socket2 != NULL)
+    {
+        disconnect(socket2, SIGNAL(readyRead()), this, SLOT(onData2Available()));
+        delete socket2;
+        socket2 = NULL;
+        TestbenchMainUi.connect2->setText("Connect");
+    }
+    else
+    {
+        socket2 = new SerialPort(inPort2);
+        connect(socket2, SIGNAL(readyRead()), this, SLOT(onData2Available()));
+        socket2->initPort(baudrate2,100);
+        TestbenchMainUi.connect2->setText("Disconnect");
+    }
+    setComboBoxes();        // Rebuild combobox entries
 }
 
 //-----------------------------------------------------------------------------
@@ -82,9 +174,35 @@ a newline occurs, at which point the assembled data record QString is processed.
 
 */
 
-void TestbenchGui::onDataAvailable()
+void TestbenchGui::onData1Available()
 {
-    QByteArray data = socket->readAll();
+    QByteArray data = socket1->readAll();
+    int n=0;
+    while (n < data.size())
+    {
+        if ((data.at(n) != '\r') && (data.at(n) != '\n')) response += data.at(n);
+        if (data.at(n) == '\n')
+        {
+// The current time is saved to ms precision followed by the data record.
+            tick.restart();
+            processResponse(response);
+            response.clear();
+        }
+        n++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+/** @brief Handle incoming serial data
+
+This is called when data appears in the serial buffer. Data is pulled in until
+a newline occurs, at which point the assembled data record QString is processed.
+
+*/
+
+void TestbenchGui::onData2Available()
+{
+    QByteArray data = socket2->readAll();
     int n=0;
     while (n < data.size())
     {
@@ -140,8 +258,10 @@ Results given in ATM */
     TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',1));
 
 /* Get local time in ISO 8601 format. */
-    QString timeString = QDateTime::currentDateTime().toString(Qt::ISODate);
-    TestbenchMainUi.timeDisplay->setText(timeString.mid(11,8));
+    QString timeString = QDateTime::currentDateTime().time().toString(Qt::ISODate);
+    QString msString = QString("%1")
+            .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
+    TestbenchMainUi.timeDisplay->setText(timeString+"."+msString);
 
 /* Save the response with timestamp stripped and replaced wth local time. */
     QString line = timeString + ',' + response.mid(response.indexOf(",")+1);
@@ -151,20 +271,29 @@ Results given in ATM */
 //-----------------------------------------------------------------------------
 /** @brief Activate the Start/Stop Recording button.
 
+Only works on socket 1, which should be set to the Arduino.
 */
 
 void TestbenchGui::on_startPushButton_clicked()
 {
-    recordingActive = (TestbenchMainUi.startPushButton->text() == "Start");
-    if (recordingActive)
+    SerialPort* socket = NULL;
+    if (socket1 != NULL) socket = socket1;
+    else if (socket2 != NULL) socket = socket2;
+    if (socket != NULL)
     {
-        TestbenchMainUi.startPushButton->setText("Stop");
-        TestbenchMainUi.startPushButton->setStyleSheet("background-color:red;");
-    }
-    else
-    {
-        TestbenchMainUi.startPushButton->setText("Start");
-        TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+        recordingActive = (TestbenchMainUi.startPushButton->text() == "Start");
+        if (recordingActive)
+        {
+            TestbenchMainUi.startPushButton->setText("Stop");
+            TestbenchMainUi.startPushButton->setStyleSheet("background-color:pink;");
+            socket->write("As+\n\r");
+        }
+        else
+        {
+            TestbenchMainUi.startPushButton->setText("Start");
+            TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+            socket->write("As-\n\r");
+        }
     }
 }
 

@@ -46,11 +46,8 @@ Uses: Qt version 4.8.6
 
 int main(int argc,char ** argv)
 {
-    QString inPort = SERIAL_PORT;
-    uint initialBaudrate = BAUDRATE;
-
     QApplication application(argc,argv);
-    TestbenchGui testbenchGui(inPort,initialBaudrate);
+    TestbenchGui testbenchGui;
     if (testbenchGui.success())
     {
         testbenchGui.show();

@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="closeFileButton">
    <property name="geometry">
     <rect>
-     <x>316</x>
-     <y>295</y>
+     <x>308</x>
+     <y>315</y>
      <width>90</width>
      <height>27</height>
     </rect>
@@ -155,8 +155,8 @@
   <widget class="QPushButton" name="startPushButton">
    <property name="geometry">
     <rect>
-     <x>262</x>
-     <y>230</y>
+     <x>254</x>
+     <y>250</y>
      <width>77</width>
      <height>46</height>
     </rect>
@@ -168,8 +168,8 @@
   <widget class="QPushButton" name="saveFileButton">
    <property name="geometry">
     <rect>
-     <x>202</x>
-     <y>295</y>
+     <x>194</x>
+     <y>315</y>
      <width>90</width>
      <height>27</height>
     </rect>
@@ -181,9 +181,9 @@
   <widget class="QLabel" name="timeDisplay">
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>226</x>
      <y>80</y>
-     <width>127</width>
+     <width>149</width>
      <height>31</height>
     </rect>
    </property>
@@ -269,6 +269,98 @@
    </property>
    <property name="text">
     <string/>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="input1ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>38</x>
+     <y>265</y>
+     <width>129</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="connect1">
+   <property name="geometry">
+    <rect>
+     <x>54</x>
+     <y>230</y>
+     <width>95</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="input2ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>424</x>
+     <y>265</y>
+     <width>129</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="connect2">
+   <property name="geometry">
+    <rect>
+     <x>436</x>
+     <y>230</y>
+     <width>101</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="baudrate1ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>62</x>
+     <y>350</y>
+     <width>87</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="baudrate2ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>444</x>
+     <y>355</y>
+     <width>87</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="connect1Label">
+   <property name="geometry">
+    <rect>
+     <x>68</x>
+     <y>300</y>
+     <width>59</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Arduino</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="connect2Label">
+   <property name="geometry">
+    <rect>
+     <x>466</x>
+     <y>300</y>
+     <width>47</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Other</string>
    </property>
   </widget>
  </widget>

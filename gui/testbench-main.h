@@ -36,6 +36,10 @@
 #include <QTime>
 #include <QCloseEvent>
 
+// Particular serial port to use
+#define SERIAL_PORT "/dev/ttyACM0"
+#define BAUDRATE 4
+
 //-----------------------------------------------------------------------------
 /** @brief Testbench Main Window.
 
@@ -45,15 +49,18 @@ class TestbenchGui : public QDialog
 {
     Q_OBJECT
 public:
-    TestbenchGui(QString inPort, uint baudrate, QWidget* parent = 0);
+    TestbenchGui(QWidget* parent = 0);
     ~TestbenchGui();
     bool success();
     QString error();
 private slots:
-    void onDataAvailable();
+    void onData1Available();
+    void onData2Available();
     void on_saveFileButton_clicked();
     void on_closeFileButton_clicked();
     void on_startPushButton_clicked();
+    void on_connect1_clicked();
+    void on_connect2_clicked();
 private:
 // User Interface object instance
     Ui::WatermeterTestbenchDialog TestbenchMainUi;
@@ -61,9 +68,12 @@ private:
     void displayErrorMessage(const QString message);
     void processResponse(const QString response);
     void saveLine(QString line);    // Save line to a file
+    void setComboBoxes();
 // Variables
-    SerialPort* socket;             //!< Serial port object pointer
-    uint baudrate;
+    SerialPort* socket1;            //!< Serial port object pointer
+    uint baudrate1;
+    SerialPort* socket2;            //!< Serial port object pointer
+    uint baudrate2;
     QString response;
     quint16 blockSize;
     QTime tick;
