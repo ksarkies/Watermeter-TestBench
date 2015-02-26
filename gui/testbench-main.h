@@ -72,9 +72,10 @@ private:
 // Variables
     SerialPort* socket1;            //!< Serial port object pointer
     uint baudrate1;
+    QString response1;
     SerialPort* socket2;            //!< Serial port object pointer
     uint baudrate2;
-    QString response;
+    QString response2;
     quint16 blockSize;
     QTime tick;
     QDir saveDirectory;

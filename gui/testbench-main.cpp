@@ -95,18 +95,29 @@ void TestbenchGui::setComboBoxes()
         QFileInfo checkUSBFile1(port);
         if (checkUSBFile1.exists())
             TestbenchMainUi.input1ComboBox->insertItem(0,port);
+    }
+    for (int i=3; i>=0; i--)
+    {
         port = "/dev/ttyACM"+QString::number(i);
         QFileInfo checkACMFile1(port);
         if (checkACMFile1.exists())
             TestbenchMainUi.input1ComboBox->insertItem(0,port);
-        port = "/dev/ttyUSB"+QString::number(i);
-        QFileInfo checkUSBFile2(port);
-        if (checkUSBFile2.exists())
-            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+        TestbenchMainUi.input1ComboBox->setCurrentIndex(0);
+    }
+    for (int i=3; i>=0; i--)
+    {
         port = "/dev/ttyACM"+QString::number(i);
         QFileInfo checkACMFile2(port);
         if (checkACMFile2.exists())
             TestbenchMainUi.input2ComboBox->insertItem(0,port);
+    }
+    for (int i=3; i>=0; i--)
+    {
+        port = "/dev/ttyUSB"+QString::number(i);
+        QFileInfo checkUSBFile2(port);
+        if (checkUSBFile2.exists())
+            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+        TestbenchMainUi.input2ComboBox->setCurrentIndex(0);
     }
 #else
 #endif
@@ -167,11 +178,10 @@ void TestbenchGui::on_connect2_clicked()
 }
 
 //-----------------------------------------------------------------------------
-/** @brief Handle incoming serial data
+/** @brief Handle incoming serial data on the Arduino
 
 This is called when data appears in the serial buffer. Data is pulled in until
 a newline occurs, at which point the assembled data record QString is processed.
-
 */
 
 void TestbenchGui::onData1Available()
@@ -180,24 +190,31 @@ void TestbenchGui::onData1Available()
     int n=0;
     while (n < data.size())
     {
-        if ((data.at(n) != '\r') && (data.at(n) != '\n')) response += data.at(n);
+        if ((data.at(n) != '\r') && (data.at(n) != '\n')) response1 += data.at(n);
         if (data.at(n) == '\n')
         {
 // The current time is saved to ms precision followed by the data record.
             tick.restart();
-            processResponse(response);
-            response.clear();
+            processResponse(response1);
+/* Get local time in ISO 8601 format. */
+            QString timeString = QDateTime::currentDateTime().time().toString(Qt::ISODate);
+            QString msString = QString("%1")
+                    .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
+            TestbenchMainUi.timeDisplay->setText(timeString+"."+msString);
+/* Save the response with timestamp stripped and replaced wth local time. */
+            QString line = timeString+','+msString+','+response1.mid(response1.indexOf(",")+1);
+            if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
+            response1.clear();
         }
         n++;
     }
 }
 
 //-----------------------------------------------------------------------------
-/** @brief Handle incoming serial data
+/** @brief Handle incoming serial data on the alternate device
 
 This is called when data appears in the serial buffer. Data is pulled in until
 a newline occurs, at which point the assembled data record QString is processed.
-
 */
 
 void TestbenchGui::onData2Available()
@@ -206,20 +223,26 @@ void TestbenchGui::onData2Available()
     int n=0;
     while (n < data.size())
     {
-        if ((data.at(n) != '\r') && (data.at(n) != '\n')) response += data.at(n);
+        if ((data.at(n) != '\r') && (data.at(n) != '\n')) response2 += data.at(n);
         if (data.at(n) == '\n')
         {
 // The current time is saved to ms precision followed by the data record.
             tick.restart();
-            processResponse(response);
-            response.clear();
+/* Get local time in ISO 8601 format. */
+            QString timeString = QDateTime::currentDateTime().time().toString(Qt::ISODate);
+            QString msString = QString("%1")
+                    .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
+/* Save the response with timestamp stripped and replaced wth local time. */
+            QString line = timeString+','+msString+','+response2.mid(response2.indexOf(",")+1);
+            if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
+            response2.clear();
         }
         n++;
     }
 }
 
 //-----------------------------------------------------------------------------
-/** @brief Process the incoming serial data
+/** @brief Process the incoming serial data for the Arduino only
 
 Parse the line as csv and display each field.
 */
@@ -256,16 +279,6 @@ Results given in ATM */
     int tempval = breakdown[4].simplified().toInt();
     float temperature = 26.0+((float)tempval-716.0)/15.07;
     TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',1));
-
-/* Get local time in ISO 8601 format. */
-    QString timeString = QDateTime::currentDateTime().time().toString(Qt::ISODate);
-    QString msString = QString("%1")
-            .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
-    TestbenchMainUi.timeDisplay->setText(timeString+"."+msString);
-
-/* Save the response with timestamp stripped and replaced wth local time. */
-    QString line = timeString + ',' + response.mid(response.indexOf(",")+1);
-    if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
 }
 
 //-----------------------------------------------------------------------------
