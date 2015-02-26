@@ -1,5 +1,4 @@
-
-/*    flow Bench Measurement and Transmission
+/*    Flow Bench Measurement and Transmission
 
 Firmware for measurement of physical quantities in a water flow apparatus for 
 testing a water meter.
@@ -43,7 +42,10 @@ Transmission of data is csv ASCII without leading zeros and CR terminated:
 - test meter period 32 bits,
 - Switch position 1 bit.
 
-NOTE: do NOT use the Arduino serial monitor. Use putty or another monitor on /dev/ttyACM0.
+NOTE: do NOT use the Arduino serial monitor. Use putty or another monitor.
+
+Linux:       /dev/ttyACMn, n = 0,1,2....
+Windows:     COMn, n = 3,4,5..
 */
 
 #include <Wire.h>
@@ -67,7 +69,10 @@ unsigned int lastSecond = 0;
 unsigned int switchVal;                 // Level of switch input
 unsigned int lastSwitchVal;             // Previous level of switch input
 unsigned int cycleTime;                 // 10 capture cycles per second for sending data
+unsigned int messageIndex;              // Valid received message count
+char command;                           // Command sent
 
+//-----------------------------------------------------------------------------
 void setup(){
 
 // Set I/O ports as input or output
@@ -89,7 +94,7 @@ http://arduino.cc/playground/Code/Timer1
   TCNT1  = 0;        //initialize counter value to 0;
   
 // set timer count for 1khz increments
-  OCR1A = 1999;      // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt with prescale 8
+  OCR1A = 1999;      // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt, prescale 8
 // turn on CTC mode (clear timer OCR1A on compare match)
   TCCR1B |= (1 << WGM12);
 // Set CS11 bit for 8 times prescale
@@ -121,8 +126,12 @@ Chronodot needs CR1620 to CR1632. */
 //  }
   lastSecond = rtc.now().second();
   timetick = 0;
+
+  messageIndex = 0;
+  command = 0;
 }
 
+//-----------------------------------------------------------------------------
 /* 1 ms clock interrupt.
 On interrupt, see if the flowmeter signal has changed from low to high. If so,
 register a count and period. */
@@ -146,7 +155,42 @@ ISR(TIMER1_COMPA_vect) {
   lastFlowmeterVal = flowmeterVal;
 }
 
+//-----------------------------------------------------------------------------
 void loop(){
+// Check for serial data incoming.
+  if (Serial.available() > 0) {
+    char receivedData = Serial.read();
+/* Attempt to validate and act on command
+Commands are of the form "Anm", where n is a single character command and m a
+list of parameters:
+"As+", "As-" turn solenoid switch on or off. */
+    switch(messageIndex) {
+// Validate action request as a synchronization check
+      case 0:
+        if (receivedData == 'A') messageIndex++;
+        break;
+// Command
+      case 1:
+        command = receivedData;
+        messageIndex++;
+        break;
+      case 2:
+// Switch command on (+) or off (-)
+        if (command == 's')
+        {
+          if (receivedData == '+') {
+            digitalWrite(SOLENOID,LOW);
+            running = 1;
+          }
+          if (receivedData == '-') {
+            digitalWrite(SOLENOID,HIGH);
+            running = 0;
+          }
+        }
+        messageIndex = 0;     // reset index for next command
+        break;
+    }
+  }
 
 // Check if the run is to start or stop looking for rising edge on switch signal
   switchVal = digitalRead(PUSHBUTTON);
