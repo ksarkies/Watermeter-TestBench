@@ -8,13 +8,17 @@ Paul Rix
 
 Tested on: Arduino Uno ATMega328 at 16MHz.
 
+A timer ISR at 1kHz detects rising edge changes in the flowmeter and watermeter
+signals and measures the time between rising edges of the pulses. Results are
+averaged over the time between transmissions if more than one pulse is present.
+
 Flow meter FS200A, 450 counts per litre, 25 litres/minute max, pulse rate 188Hz max.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header 3 of
 the Arduino Sensor Shield
 
-A timer ISR at 1kHz detects rising edge changes in the flowmeter signal and
-measures the time between rising edges of the pulses. Result is averaged over
-the time between transmissions if more than one pulse is present.
+Water meter.
+Connect three pin plug (black = gnd, red = 5V, white = signal) to header 6 of
+the Arduino Sensor Shield
 
 Pressure sensor unknown. 0.5V - 4.5V for 0MPa - 1.2MPa.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header A0 of
@@ -53,9 +57,10 @@ Windows:     COMn, n = 3,4,5..
 
 RTC_DS1307 rtc;
 
-#define FLOWMETER 3                          // pin connected to flowmeter switch
+#define FLOWMETER 3                     // pin connected to flowmeter output
 #define PUSHBUTTON 4
 #define SOLENOID 5
+#define WATERMETER 6                    // pin connected to watermeter photointerruptor output
 #define PRESSURE A0
 #define TEMPERATURE A1
 #define BAUDRATE 38400
@@ -64,6 +69,9 @@ unsigned int running = 0;               // Experiment is running
 unsigned long flowmeterPeriod = 0;      // Period between flowmeter pulses
 unsigned long flowmeterPeriodSum = 0;
 unsigned int flowmeterCount = 0;        // Pulse count for flowmeter
+unsigned long watermeterPeriod = 0;      // Period between flowmeter pulses
+unsigned long watermeterPeriodSum = 0;
+unsigned int watermeterCount = 0;        // Pulse count for flowmeter
 unsigned int timetick = 0;              // Clock fractional seconds in ms
 unsigned int lastSecond = 0;
 unsigned int switchVal;                 // Level of switch input
@@ -77,7 +85,8 @@ void setup(){
 
 // Set I/O ports as input or output
   pinMode(1,OUTPUT);                    // tx
-  pinMode(FLOWMETER,INPUT);             // flowmeter switch
+  pinMode(FLOWMETER,INPUT);             // flowmeter pulses
+  pinMode(WATERMETER,INPUT);            // watermeter pulses
   pinMode(PUSHBUTTON,INPUT);            // start switch
   pinMode(SOLENOID,OUTPUT);             // solenoid
 
@@ -139,9 +148,12 @@ register a count and period. */
 ISR(TIMER1_COMPA_vect) {
   static unsigned int lastFlowmeterVal = 0;
   static unsigned long lastFlowmeterTime = 0;
+  static unsigned int lastWatermeterVal = 0;
+  static unsigned long lastWatermeterTime = 0;
   static unsigned long tick = 0;                 // Tick time in ms for flowmeter period
   timetick++;                                    // Tick time for improved RTC precision
   tick++;
+  
 // Flowmeter period
   int flowmeterVal = digitalRead(FLOWMETER);     // Flowmeter signal input
   if ((flowmeterVal == 0) && (lastFlowmeterVal > 0)) {
@@ -153,6 +165,18 @@ ISR(TIMER1_COMPA_vect) {
     lastFlowmeterTime = tick;
   }
   lastFlowmeterVal = flowmeterVal;
+  
+// Watermeter period
+  int watermeterVal = digitalRead(WATERMETER);    // Watermeter signal input
+  if ((watermeterVal == 0) && (lastWatermeterVal > 0)) {
+    watermeterCount++;                            // New pulse, add to pulse count
+    watermeterPeriod = tick - lastWatermeterTime - 1;
+    if (watermeterCount > 1) {
+      watermeterPeriodSum += watermeterPeriod;
+    }
+    lastWatermeterTime = tick;
+  }
+  lastWatermeterVal = watermeterVal;
 }
 
 //-----------------------------------------------------------------------------
@@ -240,13 +264,20 @@ the last measured period is used. */
         flowmeterPeriod = flowmeterPeriodSum/(flowmeterCount - 1);
         flowmeterPeriodSum = 0;
       }
-      int currentCount = flowmeterCount;
+      int currentFlowCount = flowmeterCount;
       flowmeterCount = 0;
+      if (watermeterCount > 2) {
+        watermeterPeriod = watermeterPeriodSum/(watermeterCount - 1);
+        watermeterPeriodSum = 0;
+      }
+      int currentWaterCount = watermeterCount;
+      watermeterCount = 0;
       sei();
-      Serial.print(currentCount);
+// Print Flowmeter Count
+      Serial.print(currentFlowCount);
       Serial.print(",");
 
-// Print flow meter period last measured.
+// Print flowmeter period last measured.
       Serial.print(flowmeterPeriod);
       Serial.print(",");
 
@@ -256,6 +287,14 @@ the last measured period is used. */
     
 // Print temperature value
       Serial.print(analogRead(TEMPERATURE));
+      Serial.print(",");
+
+// Print Watermeter Count
+      Serial.print(currentWaterCount);
+      Serial.print(",");
+
+// Print watermeter period last measured.
+      Serial.print(watermeterPeriod);
 //      Serial.print(",");
     
       Serial.println("");

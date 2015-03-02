@@ -58,12 +58,6 @@ TestbenchGui::TestbenchGui(QWidget* parent) : QDialog(parent)
 {
     TestbenchMainUi.setupUi(this);
     setComboBoxes();
-    QStringList baudrates;
-    baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
-    TestbenchMainUi.baudrate1ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE);
-    TestbenchMainUi.baudrate2ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE);
 
     TestbenchMainUi.startPushButton->setText("Start");
     TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
@@ -77,7 +71,7 @@ TestbenchGui::~TestbenchGui()
 }
 
 //-----------------------------------------------------------------------------
-/** @brief Setup comboboxes
+/** @brief Setup Serial ComboBoxes
 
 Test existence of serial port (ACM and USB) and build both combobox entries.
 Different ports are checked on Windows and Linux.
@@ -85,10 +79,10 @@ Different ports are checked on Windows and Linux.
 
 void TestbenchGui::setComboBoxes()
 {
-#ifdef Q_OS_LINUX
     QString port;
     TestbenchMainUi.input1ComboBox->clear();
     TestbenchMainUi.input2ComboBox->clear();
+#ifdef Q_OS_LINUX
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyUSB"+QString::number(i);
@@ -102,7 +96,6 @@ void TestbenchGui::setComboBoxes()
         QFileInfo checkACMFile1(port);
         if (checkACMFile1.exists())
             TestbenchMainUi.input1ComboBox->insertItem(0,port);
-        TestbenchMainUi.input1ComboBox->setCurrentIndex(0);
     }
     for (int i=3; i>=0; i--)
     {
@@ -117,10 +110,32 @@ void TestbenchGui::setComboBoxes()
         QFileInfo checkUSBFile2(port);
         if (checkUSBFile2.exists())
             TestbenchMainUi.input2ComboBox->insertItem(0,port);
-        TestbenchMainUi.input2ComboBox->setCurrentIndex(0);
     }
 #else
+    for (int i=3; i>=0; i--)
+    {
+        port = "COM"+QString::number(i+3);
+        QFileInfo checkACMFile1(port);
+        if (checkACMFile1.exists())
+            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+    }
+    for (int i=3; i>=0; i--)
+    {
+        port = "COM"+QString::number(i+3);
+        QFileInfo checkUSBFile2(port);
+        if (checkUSBFile2.exists())
+            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+    }
 #endif
+    TestbenchMainUi.input1ComboBox->setCurrentIndex(0);
+    TestbenchMainUi.input2ComboBox->setCurrentIndex(0);
+
+    QStringList baudrates;
+    baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    TestbenchMainUi.baudrate1ComboBox->addItems(baudrates);
+    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE);
+    TestbenchMainUi.baudrate2ComboBox->addItems(baudrates);
+    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE);
 }
 
 //-----------------------------------------------------------------------------
@@ -201,7 +216,7 @@ void TestbenchGui::onData1Available()
             QString msString = QString("%1")
                     .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
             TestbenchMainUi.timeDisplay->setText(timeString+"."+msString);
-/* Save the response with timestamp stripped and replaced wth local time. */
+/* Save the response with timestamp stripped and replaced with local time. */
             QString line = timeString+','+msString+','+response1.mid(response1.indexOf(",")+1);
             if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
             response1.clear();
@@ -252,10 +267,12 @@ void TestbenchGui::processResponse(const QString response)
     QStringList breakdown = response.split(",");
     int size = breakdown.size();
 
+    if (size < 1) return;
 // Extract time from ISO 8601 formatted date-time.
     QString timeStamp = breakdown[0].simplified();
 //    TestbenchMainUi.timeDisplay->setText(timeStamp.mid(11,8));
 
+    if (size < 3) return;
 /* Flow meter count and period. These are processed further to derive a
 flow rate by selecting the most accurate measure. 
 Datasheet for the FS200A specifies 450 counts per litre.
@@ -269,16 +286,30 @@ Count is number of pulses in 10ms, period is in ms. */
         flowMeterRate = 1.333*flowMeterCount;
     TestbenchMainUi.flowRate->setText(QString("%1").arg(flowMeterRate,0,'f',1));
 
+    if (size < 4) return;
 /* Pressure scaled by datasheet specification 0.5V to 4.5V for 0 to 1.2 MPa.
 Results given in ATM */
     int pressval = breakdown[3].simplified().toInt();
     float pressure = 3.0*(5.0*(float)pressval/1024.0-0.5);
     TestbenchMainUi.pressure->setText(QString("%1").arg(pressure,0,'f',3));
 
+    if (size < 5) return;
 // Temperature scaled by rough calibration.
     int tempval = breakdown[4].simplified().toInt();
     float temperature = 26.0+((float)tempval-716.0)/15.07;
     TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',1));
+
+    if (size < 7) return;
+/* Water meter count and period. These are processed further to display a
+count value with the best accuracy. */
+    int waterMeterCount = breakdown[5].simplified().toInt();
+    long waterMeterPeriod = breakdown[6].simplified().toLong();
+    float waterMeterRate;
+    if (waterMeterCount < 10)
+        waterMeterRate = 100.0/waterMeterPeriod;
+    else
+        waterMeterRate = 1.0*waterMeterCount;
+    TestbenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
 }
 
 //-----------------------------------------------------------------------------

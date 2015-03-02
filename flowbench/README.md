@@ -23,6 +23,10 @@ Solenoid 2W-200-20 high is off, low is on.
 Connect three pin plug (black = gnd, red = 5V, white = signal) to header 5 of
 the Arduino Sensor Shield.
 
+Water meter.
+Connect three pin plug (black = gnd, red = 5V, white = signal) to header 6 of
+the Arduino Sensor Shield
+
 
 K. Sarkies, 26/2/2015
 
