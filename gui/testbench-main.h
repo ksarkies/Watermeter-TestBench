@@ -38,7 +38,8 @@
 
 // Particular serial port to use
 #define SERIAL_PORT "/dev/ttyACM0"
-#define BAUDRATE 4
+#define BAUDRATE1 4
+#define BAUDRATE2 2
 
 //-----------------------------------------------------------------------------
 /** @brief Testbench Main Window.

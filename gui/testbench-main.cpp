@@ -83,6 +83,8 @@ void TestbenchGui::setComboBoxes()
     TestbenchMainUi.input1ComboBox->clear();
     TestbenchMainUi.input2ComboBox->clear();
 #ifdef Q_OS_LINUX
+    port = "/dev/ttyS0";
+    TestbenchMainUi.input1ComboBox->insertItem(0,port);
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyUSB"+QString::number(i);
@@ -97,6 +99,8 @@ void TestbenchGui::setComboBoxes()
         if (checkACMFile1.exists())
             TestbenchMainUi.input1ComboBox->insertItem(0,port);
     }
+    port = "/dev/ttyS0";
+    TestbenchMainUi.input2ComboBox->insertItem(0,port);
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyACM"+QString::number(i);
@@ -133,9 +137,9 @@ void TestbenchGui::setComboBoxes()
     QStringList baudrates;
     baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
     TestbenchMainUi.baudrate1ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE);
+    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE1);
     TestbenchMainUi.baudrate2ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE);
+    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE2);
 }
 
 //-----------------------------------------------------------------------------
@@ -146,7 +150,7 @@ void TestbenchGui::setComboBoxes()
 void TestbenchGui::on_connect1_clicked()
 {
     QString inPort1 = TestbenchMainUi.input1ComboBox->currentText();
-    baudrate1 = BAUDRATE;
+    baudrate1 = BAUDRATE1;
 
     if (socket1 != NULL)
     {
@@ -173,7 +177,7 @@ void TestbenchGui::on_connect1_clicked()
 void TestbenchGui::on_connect2_clicked()
 {
     QString inPort2 = TestbenchMainUi.input2ComboBox->currentText();
-    baudrate2 = BAUDRATE;
+    baudrate2 = BAUDRATE2;
 
     if (socket2 != NULL)
     {
