@@ -85,9 +85,9 @@ void setup(){
 
 // Set I/O ports as input or output
   pinMode(1,OUTPUT);                    // tx
-  pinMode(FLOWMETER,INPUT);             // flowmeter pulses
-  pinMode(WATERMETER,INPUT);            // watermeter pulses
-  pinMode(PUSHBUTTON,INPUT);            // start switch
+  pinMode(FLOWMETER,INPUT_PULLUP);      // flowmeter pulses
+  pinMode(WATERMETER,INPUT_PULLUP);     // watermeter pulses
+  pinMode(PUSHBUTTON,INPUT_PULLUP);     // start switch
   pinMode(SOLENOID,OUTPUT);             // solenoid
 
 /* TIMER SETUP- the timer interrupt allows precise timed measurements of the
@@ -217,8 +217,9 @@ list of parameters:
   }
 
 // Check if the run is to start or stop looking for rising edge on switch signal
+// If found, flip running state (0 is off, 1 is on)
   switchVal = digitalRead(PUSHBUTTON);
-  if ((switchVal == 0) && (lastSwitchVal > 0)) running = ~running;
+  if ((switchVal == 0) && (lastSwitchVal > 0)) running = (running++ & 0x01);
   lastSwitchVal = switchVal;
 
   DateTime now = rtc.now();
@@ -230,6 +231,7 @@ list of parameters:
   if (running > 0) {
     digitalWrite(SOLENOID,LOW);
 
+// Wait for 10 cycles, i.e. 100ms to transmit results.
     if  (cycleTime++ > 10) {
     
       Serial.print(now.year(), DEC);
@@ -295,6 +297,13 @@ the last measured period is used. */
 
 // Print watermeter period last measured.
       Serial.print(watermeterPeriod);
+      Serial.print(",");
+
+// Blank field
+      Serial.print(",");
+
+// Print running status.
+      Serial.print(running);
 //      Serial.print(",");
     
       Serial.println("");
@@ -303,7 +312,8 @@ the last measured period is used. */
     }
   }
   else
-        digitalWrite(SOLENOID,HIGH);
+    digitalWrite(SOLENOID,HIGH);
+// 10ms delay
   delay(10);
 }
 
