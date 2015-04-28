@@ -52,10 +52,16 @@ Linux:       /dev/ttyACMn, n = 0,1,2....
 Windows:     COMn, n = 3,4,5..
 */
 
+#include <SPI.h>
 #include <Wire.h>
 #include "RTClib.h"
 
 RTC_DS1307 rtc;
+
+#define Rref 400      // enter 400 if PT100 used, enter 4000 if PT1000 used
+#define WIRE 2        // PT100/1000 has 2,3 or 4 wire connection
+
+#define CS 9
 
 #define FLOWMETER 3                     // pin connected to flowmeter output
 #define PUSHBUTTON 4
@@ -79,6 +85,14 @@ unsigned int lastSwitchVal;             // Previous level of switch input
 unsigned int cycleTime;                 // 10 capture cycles per second for sending data
 unsigned int messageIndex;              // Valid received message count
 char command;                           // Command sent
+
+//-----------------------------------------------------------------------------
+double CallendarVanDusen(double R){
+  double a = 3.9083E-03;
+  double b = -5.7750E-07;
+  signed long R0=Rref/4;
+  return (-R0*a+sqrt(R0*R0*a*a-4*R0*b*(R0-R)))/(2*R0*b);  
+}
 
 //-----------------------------------------------------------------------------
 void setup(){
@@ -116,7 +130,8 @@ http://arduino.cc/playground/Code/Timer1
 
   switchVal = digitalRead(PUSHBUTTON);
   lastSwitchVal = switchVal;
-  
+
+// Initialise serial comms
   Serial.begin(BAUDRATE);
 
 #ifdef AVR
@@ -135,6 +150,22 @@ Chronodot needs CR1620 to CR1632. */
 //  }
   lastSecond = rtc.now().second();
   timetick = 0;
+
+// Setup SPI for temperature measurements
+  SPI.begin();
+  SPI.setClockDivider(200);
+  SPI.setDataMode(SPI_MODE3);
+  pinMode(CS, OUTPUT);
+
+// Initialise MAX31625 module
+  digitalWrite(CS, HIGH);
+  delay(100);
+  digitalWrite(CS, LOW);
+  SPI.transfer(0x80);
+  if (WIRE==2 || WIRE==4) SPI.transfer(0xC2);
+  if (WIRE==3) SPI.transfer(0xD2);
+  digitalWrite(CS, HIGH);
+  delay(50);
 
   messageIndex = 0;
   command = 0;
@@ -231,6 +262,23 @@ list of parameters:
   if (running > 0) {
     digitalWrite(SOLENOID,LOW);
 
+  unsigned char reg[8];          // array for all the 8 registers
+  unsigned int i;
+  unsigned int RTDdata;          // 16 bit value of RTD MSB & RTD LSB, reg[1] & reg[2]
+  unsigned int ADCcode;          // 15 bit value of ADC, RTDdata >> 1, 0th bit of RTDdata is RTD connection fault detection bit
+  double Resistance;             // actual resistance of PT100(0) sensor
+
+// Access the MAX31625 to get Pt100 resistance reading
+  digitalWrite(CS, LOW);
+  delay(10);
+  SPI.transfer(0);                                       // start reading from address=0
+  for (i=0; i<8; i++) reg[i]=SPI.transfer(0);            // read all the 8 registers
+  delay(10);
+  digitalWrite(CS, HIGH);
+  RTDdata = reg[1] << 8 | reg[2];
+  ADCcode=RTDdata>>1;
+  Resistance=(double)ADCcode*Rref/32768;
+
 // Wait for 10 cycles, i.e. 100ms to transmit results.
     if  (cycleTime++ > 10) {
     
@@ -288,7 +336,8 @@ the last measured period is used. */
       Serial.print(",");
     
 // Print temperature value
-      Serial.print(analogRead(TEMPERATURE));
+      Serial.print(CallendarVanDusen(Resistance));
+//      Serial.print(analogRead(TEMPERATURE));
       Serial.print(",");
 
 // Print Watermeter Count

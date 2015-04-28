@@ -299,9 +299,10 @@ Results given in ATM */
 
     if (size < 5) return;
 // Temperature scaled by rough calibration.
-    int tempval = breakdown[4].simplified().toInt();
-    float temperature = 26.0+((float)tempval-716.0)/15.07;
-    TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',1));
+//    int tempval = breakdown[4].simplified().toInt();
+//    float temperature = 26.0+((float)tempval-716.0)/15.07;
+    float temperature = breakdown[4].simplified().toFloat();
+    TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',2));
 
     if (size < 7) return;
 /* Water meter count and period. These are processed further to display a
