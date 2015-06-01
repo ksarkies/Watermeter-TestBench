@@ -88,9 +88,12 @@ char command;                           // Command sent
 
 //-----------------------------------------------------------------------------
 double CallendarVanDusen(double R){
-  double a = 3.9083E-03;
-  double b = -5.7750E-07;
-  signed long R0=Rref/4;
+  double a = 3.8418E-03;
+//  double a = 3.9083E-03;
+  double b = -1.587E-07;
+//  double b = -5.7750E-07;
+  signed long R0=100.14;
+//  signed long R0=Rref/4;
   return (-R0*a+sqrt(R0*R0*a*a-4*R0*b*(R0-R)))/(2*R0*b);  
 }
 
