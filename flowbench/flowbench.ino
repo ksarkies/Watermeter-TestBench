@@ -265,22 +265,25 @@ list of parameters:
   if (running > 0) {
     digitalWrite(SOLENOID,LOW);
 
-  unsigned char reg[8];          // array for all the 8 registers
-  unsigned int i;
-  unsigned int RTDdata;          // 16 bit value of RTD MSB & RTD LSB, reg[1] & reg[2]
-  unsigned int ADCcode;          // 15 bit value of ADC, RTDdata >> 1, 0th bit of RTDdata is RTD connection fault detection bit
-  double Resistance;             // actual resistance of PT100(0) sensor
+    unsigned char reg[8];          // array for all the 8 registers
+    unsigned int i;
+// 16 bit value of RTD MSB & RTD LSB, reg[1] & reg[2]
+// RTDdata >> 1, 0th bit of RTDdata is RTD connection fault detection bit
+    unsigned int RTDdata;
+// 15 bit value of ADC
+    unsigned int ADCcode;
+    double Resistance;             // actual resistance of PT100(0) sensor
 
 // Access the MAX31625 to get Pt100 resistance reading
-  digitalWrite(CS, LOW);
-  delay(10);
-  SPI.transfer(0);                                       // start reading from address=0
-  for (i=0; i<8; i++) reg[i]=SPI.transfer(0);            // read all the 8 registers
-  delay(10);
-  digitalWrite(CS, HIGH);
-  RTDdata = reg[1] << 8 | reg[2];
-  ADCcode=RTDdata>>1;
-  Resistance=(double)ADCcode*Rref/32768;
+    digitalWrite(CS, LOW);
+    delay(10);
+    SPI.transfer(0);                              // start reading from address=0
+    for (i=0; i<8; i++) reg[i]=SPI.transfer(0);   // read all the 8 registers
+    delay(10);
+    digitalWrite(CS, HIGH);
+    RTDdata = reg[1] << 8 | reg[2];
+    ADCcode=RTDdata>>1;
+    Resistance=(double)ADCcode*Rref/32768;
 
 // Wait for 10 cycles, i.e. 100ms to transmit results.
     if  (cycleTime++ > 10) {
