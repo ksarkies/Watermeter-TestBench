@@ -268,12 +268,14 @@ Parse the line as csv and display each field.
 
 void TestbenchGui::processResponse(const QString response)
 {
+    QString line;
     QStringList breakdown = response.split(",");
     int size = breakdown.size();
 
     if (size < 1) return;
 // Extract time from ISO 8601 formatted date-time.
     QString timeStamp = breakdown[0].simplified();
+    line = QString("%1").arg(timeStamp,30);
 //    TestbenchMainUi.timeDisplay->setText(timeStamp.mid(11,8));
 
     if (size < 3) return;
@@ -289,6 +291,7 @@ Count is number of pulses in 10ms, period is in ms. */
     else
         flowMeterRate = 1.333*flowMeterCount;
     TestbenchMainUi.flowRate->setText(QString("%1").arg(flowMeterRate,0,'f',1));
+    line += QString("%1").arg(flowMeterRate,10,'f',1);
 
     if (size < 4) return;
 /* Pressure scaled by datasheet specification 0.5V to 4.5V for 0 to 1.2 MPa.
@@ -296,6 +299,7 @@ Results given in ATM */
     int pressval = breakdown[3].simplified().toInt();
     float pressure = 3.0*(5.0*(float)pressval/1024.0-0.5);
     TestbenchMainUi.pressure->setText(QString("%1").arg(pressure,0,'f',3));
+    line += QString("%1").arg(pressure,10,'f',1);
 
     if (size < 5) return;
 // Temperature scaled by rough calibration.
@@ -303,6 +307,7 @@ Results given in ATM */
 //    float temperature = 26.0+((float)tempval-716.0)/15.07;
     float temperature = breakdown[4].simplified().toFloat();
     TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',2));
+    line += QString("%1").arg(temperature,10,'f',1);
 
     if (size < 7) return;
 /* Water meter count and period. These are processed further to display a
@@ -315,6 +320,10 @@ count value with the best accuracy. */
     else
         waterMeterRate = 1.0*waterMeterCount;
     TestbenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
+    line += QString("%1").arg(waterMeterRate,10,'f',1);
+qDebug() << line;
+    TestbenchMainUi.displayListWidget->addItem(line);
+    TestbenchMainUi.displayListWidget->scrollToBottom();
 }
 
 //-----------------------------------------------------------------------------
@@ -423,6 +432,7 @@ void TestbenchGui::on_closeFileButton_clicked()
         saveFile = QString();
     }
 }
+
 //-----------------------------------------------------------------------------
 /** @brief Show an error condition in the Error label.
 
