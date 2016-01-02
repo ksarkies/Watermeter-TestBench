@@ -22,15 +22,15 @@ Tests to be done are:
 - Read the Watermeter count as processed by the Watermeter and transmitted
   serially in csv format for comparison with flowmeter readings. This will
   verify the validity of the Watermeter measurements.
-- Read the Watermeter count  as processed by the Watermeter and transmitted
+- Read the Watermeter count as processed by the Watermeter and transmitted
   via the XBee to verify the system operation.
 
 The code is for the Arduino IDE. It requires an additional subfolder "libraries"
 with the following libraries:
 
-- RTClib for the Chronodot RTC.
+- "RTClib" for the Chronodot RTC.
     https://github.com/adafruit/RTClib
-- Wire for the TWI (I^2C) to communicate with the Chronodot.
+- "Wire" for the TWI (I2C) to communicate with the Chronodot.
     https://code.google.com/p/arduino/source/browse/trunk/libraries/Wire/?r=1092
 
 K. Sarkies, 22/1/2015

@@ -63,10 +63,10 @@ RTC_DS1307 rtc;
 
 #define CS 9
 
-#define FLOWMETER 3                     // pin connected to flowmeter output
+#define FLOWMETER 3     // pin connected to flowmeter output
 #define PUSHBUTTON 4
 #define SOLENOID 5
-#define WATERMETER 6                    // pin connected to watermeter photointerruptor output
+#define WATERMETER 6    // pin connected to watermeter photointerruptor output
 #define PRESSURE A0
 #define TEMPERATURE A1
 #define BAUDRATE 38400
@@ -75,14 +75,14 @@ unsigned int running = 0;               // Experiment is running
 unsigned long flowmeterPeriod = 0;      // Period between flowmeter pulses
 unsigned long flowmeterPeriodSum = 0;
 unsigned int flowmeterCount = 0;        // Pulse count for flowmeter
-unsigned long watermeterPeriod = 0;      // Period between flowmeter pulses
+unsigned long watermeterPeriod = 0;     // Period between flowmeter pulses
 unsigned long watermeterPeriodSum = 0;
-unsigned int watermeterCount = 0;        // Pulse count for flowmeter
+unsigned int watermeterCount = 0;       // Pulse count for flowmeter
 unsigned int timetick = 0;              // Clock fractional seconds in ms
 unsigned int lastSecond = 0;
 unsigned int switchVal;                 // Level of switch input
 unsigned int lastSwitchVal;             // Previous level of switch input
-unsigned int cycleTime;                 // 10 capture cycles per second for sending data
+unsigned int cycleTime;                 // Counts 10 capture cycles for sending data
 unsigned int messageIndex;              // Valid received message count
 char command;                           // Command sent
 
@@ -144,10 +144,10 @@ http://arduino.cc/playground/Code/Timer1
 #endif
   rtc.begin();
   
-/* This sets the RTC with a compile date & time taken from FLASH. Accuracy depends on the
-time between compilation and upload being negligible. It will reset to this value each
-time the processor is reset unless the RTC is battery backed.
-Chronodot needs CR1620 to CR1632. */
+/* This sets the RTC with a compile date & time taken from FLASH. Accuracy
+depends on the time between compilation and upload being negligible. It will
+reset to this value each time the processor is reset unless the RTC is battery
+backed. Chronodot needs CR1620 to CR1632. */
 //  if (! rtc.isrunning()) {
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));   
 //  }
@@ -177,21 +177,21 @@ Chronodot needs CR1620 to CR1632. */
 //-----------------------------------------------------------------------------
 /* 1 ms clock interrupt.
 On interrupt, see if the flowmeter signal has changed from low to high. If so,
-register a count and period. */
+register a count and a period. */
 
 ISR(TIMER1_COMPA_vect) {
   static unsigned int lastFlowmeterVal = 0;
   static unsigned long lastFlowmeterTime = 0;
   static unsigned int lastWatermeterVal = 0;
   static unsigned long lastWatermeterTime = 0;
-  static unsigned long tick = 0;                 // Tick time in ms for flowmeter period
-  timetick++;                                    // Tick time for improved RTC precision
+  static unsigned long tick = 0;        // Tick time in ms for flowmeter period
+  timetick++;                           // Tick time for improved RTC precision
   tick++;
   
 // Flowmeter period
   int flowmeterVal = digitalRead(FLOWMETER);     // Flowmeter signal input
   if ((flowmeterVal == 0) && (lastFlowmeterVal > 0)) {
-    flowmeterCount++;                            // New pulse, add to pulse count
+    flowmeterCount++;                   // New pulse, add to pulse count
     flowmeterPeriod = tick - lastFlowmeterTime - 1;
     if (flowmeterCount > 1) {
       flowmeterPeriodSum += flowmeterPeriod;
@@ -203,7 +203,7 @@ ISR(TIMER1_COMPA_vect) {
 // Watermeter period
   int watermeterVal = digitalRead(WATERMETER);    // Watermeter signal input
   if ((watermeterVal == 0) && (lastWatermeterVal > 0)) {
-    watermeterCount++;                            // New pulse, add to pulse count
+    watermeterCount++;                  // New pulse, add to pulse count
     watermeterPeriod = tick - lastWatermeterTime - 1;
     if (watermeterCount > 1) {
       watermeterPeriodSum += watermeterPeriod;
@@ -219,8 +219,8 @@ void loop(){
   if (Serial.available() > 0) {
     char receivedData = Serial.read();
 /* Attempt to validate and act on command
-Commands are of the form "Anm", where n is a single character command and m a
-list of parameters:
+Action commands are of the form "Anm", where n is a single character command
+and m a list of parameters:
 "As+", "As-" turn solenoid switch on or off. */
     switch(messageIndex) {
 // Validate action request as a synchronization check
@@ -236,7 +236,7 @@ list of parameters:
 // Switch command on (+) or off (-)
         if (command == 's')
         {
-          if (receivedData == '+') {
+          if (receivedData == '+'){
             digitalWrite(SOLENOID,LOW);
             running = 1;
           }
@@ -250,8 +250,9 @@ list of parameters:
     }
   }
 
-// Check if the run is to start or stop looking for rising edge on switch signal
-// If found, flip running state (0 is off, 1 is on)
+/* Check if the run is to start or stop, looking for rising edge on switch
+signal. If found, flip running state (0 is off, 1 is on). This can be overridden
+by software command from the GUI. */
   switchVal = digitalRead(PUSHBUTTON);
   if ((switchVal == 0) && (lastSwitchVal > 0)) running = (running++ & 0x01);
   lastSwitchVal = switchVal;
@@ -285,7 +286,7 @@ list of parameters:
     ADCcode=RTDdata>>1;
     Resistance=(double)ADCcode*Rref/32768;
 
-// Wait for 10 cycles, i.e. 100ms to transmit results.
+// Wait for 10 cycles of 10ms to transmit results every 100ms.
     if  (cycleTime++ > 10) {
     
       Serial.print(now.year(), DEC);
