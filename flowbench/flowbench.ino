@@ -48,7 +48,7 @@ Transmission of data is csv ASCII without leading zeros and CR terminated:
 
 NOTE: do NOT use the Arduino serial monitor. Use putty or another monitor.
 
-Linux:       /dev/ttyACMn, n = 0,1,2....
+Linux:     /dev/ttyACMn, n = 0,1,2....
 Windows:     COMn, n = 3,4,5..
 */
 
@@ -58,8 +58,9 @@ Windows:     COMn, n = 3,4,5..
 
 RTC_DS1307 rtc;
 
-#define Rref 400      // enter 400 if PT100 used, enter 4000 if PT1000 used
-#define WIRE 2        // PT100/1000 has 2,3 or 4 wire connection
+#define INTERVAL    1   // Interval between measurements in seconds
+#define Rref      400   // 400 if PT100 used, enter 4000 if PT1000 used
+#define WIRE      2     // PT100/1000 has 2,3 or 4 wire connection
 
 #define CS 9
 
@@ -71,20 +72,22 @@ RTC_DS1307 rtc;
 #define TEMPERATURE A1
 #define BAUDRATE 38400
 
-unsigned int running = 0;               // Experiment is running
-unsigned long flowmeterPeriod = 0;      // Period between flowmeter pulses
+unsigned int running = 0;             // Experiment is running
+unsigned long flowmeterPeriod = 0;    // Period between flowmeter pulses
 unsigned long flowmeterPeriodSum = 0;
-unsigned int flowmeterCount = 0;        // Pulse count for flowmeter
-unsigned long watermeterPeriod = 0;     // Period between flowmeter pulses
+unsigned int flowmeterCount = 0;      // Pulse count for flowmeter
+unsigned long watermeterPeriod = 0;   // Period between flowmeter pulses
 unsigned long watermeterPeriodSum = 0;
-unsigned int watermeterCount = 0;       // Pulse count for flowmeter
-unsigned int timetick = 0;              // Clock fractional seconds in ms
+unsigned int watermeterCount = 0;     // Pulse count for flowmeter
+unsigned int msTime = 0;              // Clock fractional seconds in ms
+unsigned long msTick = 0;             // Running ms count
+unsigned int cycleTime = 0;           // Milliseconds between measurement cycles
 unsigned int lastSecond = 0;
-unsigned int switchVal;                 // Level of switch input
-unsigned int lastSwitchVal;             // Previous level of switch input
-unsigned int cycleTime;                 // Counts 10 capture cycles for sending data
-unsigned int messageIndex;              // Valid received message count
-char command;                           // Command sent
+unsigned int switchVal;               // Level of switch input
+unsigned int lastSwitchVal;           // Previous level of switch input
+unsigned int messageIndex;            // Valid received message count
+char command;                         // Command sent
+unsigned int test = 0;
 
 //-----------------------------------------------------------------------------
 double CallendarVanDusen(double R){
@@ -101,26 +104,28 @@ double CallendarVanDusen(double R){
 void setup(){
 
 // Set I/O ports as input or output
-  pinMode(1,OUTPUT);                    // tx
-  pinMode(FLOWMETER,INPUT_PULLUP);      // flowmeter pulses
-  pinMode(WATERMETER,INPUT_PULLUP);     // watermeter pulses
-  pinMode(PUSHBUTTON,INPUT_PULLUP);     // start switch
-  pinMode(SOLENOID,OUTPUT);             // solenoid
+  pinMode(1,OUTPUT);                  // tx
+  pinMode(FLOWMETER,INPUT_PULLUP);    // flowmeter pulses
+  pinMode(WATERMETER,INPUT_PULLUP);   // watermeter pulses
+  pinMode(PUSHBUTTON,INPUT_PULLUP);   // start switch
+  pinMode(SOLENOID,OUTPUT);           // solenoid
+
+  pinMode(2,OUTPUT);
 
 /* TIMER SETUP- the timer interrupt allows precise timed measurements of the
 Flowmeter switch for more info about configuration of arduino timers see
 http://arduino.cc/playground/Code/Timer1
 */
   
-  cli();                               // stop interrupts
+  cli();           // stop interrupts
 
-//set timer1 interrupt at 1kHz
-  TCCR1A = 0;        // set entire TCCR1A register to 0
-  TCCR1B = 0;        // set entire TCCR1B register to 0  
-  TCNT1  = 0;        //initialize counter value to 0;
+// set timer1 interrupt at 1kHz
+  TCCR1A = 0;      // set entire TCCR1A register to 0
+  TCCR1B = 0;      // set entire TCCR1B register to 0  
+  TCNT1  = 0;      // initialize counter value to 0;
   
 // set timer count for 1khz increments
-  OCR1A = 1999;      // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt, prescale 8
+  OCR1A = 1999;    // = (16*10^6) / (1000*8) - 1 for 1kHz interrupt, prescale 8
 // turn on CTC mode (clear timer OCR1A on compare match)
   TCCR1B |= (1 << WGM12);
 // Set CS11 bit for 8 times prescale
@@ -128,7 +133,7 @@ http://arduino.cc/playground/Code/Timer1
 // enable timer compare interrupt
   TIMSK1 |= (1 << OCIE1A);
   
-  sei();             // allow interrupts
+  sei();           // allow interrupts
 //END TIMER SETUP
 
   switchVal = digitalRead(PUSHBUTTON);
@@ -138,9 +143,9 @@ http://arduino.cc/playground/Code/Timer1
   Serial.begin(BAUDRATE);
 
 #ifdef AVR
-  Wire.begin();  // Arduinos with AVR microcontrollers
+  Wire.begin();    // Arduinos with AVR microcontrollers
 #else
-  Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+  Wire1.begin();   // Shield I2C pins connect to alt I2C bus on Arduino Due
 #endif
   rtc.begin();
   
@@ -152,7 +157,7 @@ backed. Chronodot needs CR1620 to CR1632. */
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));   
 //  }
   lastSecond = rtc.now().second();
-  timetick = 0;
+  msTime = 0;
 
 // Setup SPI for temperature measurements
   SPI.begin();
@@ -172,6 +177,9 @@ backed. Chronodot needs CR1620 to CR1632. */
 
   messageIndex = 0;
   command = 0;
+  flowmeterPeriodSum =0;
+  watermeterPeriodSum =0;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -184,31 +192,31 @@ ISR(TIMER1_COMPA_vect) {
   static unsigned long lastFlowmeterTime = 0;
   static unsigned int lastWatermeterVal = 0;
   static unsigned long lastWatermeterTime = 0;
-  static unsigned long tick = 0;        // Tick time in ms for flowmeter period
-  timetick++;                           // Tick time for improved RTC precision
-  tick++;
-  
+  msTime++;                     // millisecond count for improved RTC precision
+  cycleTime++;
+  msTick++;
+
 // Flowmeter period
   int flowmeterVal = digitalRead(FLOWMETER);     // Flowmeter signal input
   if ((flowmeterVal == 0) && (lastFlowmeterVal > 0)) {
-    flowmeterCount++;                   // New pulse, add to pulse count
-    flowmeterPeriod = tick - lastFlowmeterTime - 1;
+    flowmeterCount++;             // New pulse, add to pulse count
+    flowmeterPeriod = msTick - lastFlowmeterTime - 1;
     if (flowmeterCount > 1) {
-      flowmeterPeriodSum += flowmeterPeriod;
+    flowmeterPeriodSum += flowmeterPeriod;
     }
-    lastFlowmeterTime = tick;
+    lastFlowmeterTime = msTick;
   }
   lastFlowmeterVal = flowmeterVal;
   
 // Watermeter period
   int watermeterVal = digitalRead(WATERMETER);    // Watermeter signal input
   if ((watermeterVal == 0) && (lastWatermeterVal > 0)) {
-    watermeterCount++;                  // New pulse, add to pulse count
-    watermeterPeriod = tick - lastWatermeterTime - 1;
+    watermeterCount++;              // New pulse, add to pulse count
+    watermeterPeriod = msTick - lastWatermeterTime - 1;
     if (watermeterCount > 1) {
-      watermeterPeriodSum += watermeterPeriod;
+    watermeterPeriodSum += watermeterPeriod;
     }
-    lastWatermeterTime = tick;
+    lastWatermeterTime = msTick;
   }
   lastWatermeterVal = watermeterVal;
 }
@@ -224,29 +232,29 @@ and m a list of parameters:
 "As+", "As-" turn solenoid switch on or off. */
     switch(messageIndex) {
 // Validate action request as a synchronization check
-      case 0:
-        if (receivedData == 'A') messageIndex++;
-        break;
+    case 0:
+      if (receivedData == 'A') messageIndex++;
+      break;
 // Command
-      case 1:
-        command = receivedData;
-        messageIndex++;
-        break;
-      case 2:
+    case 1:
+      command = receivedData;
+      messageIndex++;
+      break;
+    case 2:
 // Switch command on (+) or off (-)
-        if (command == 's')
-        {
-          if (receivedData == '+'){
-            digitalWrite(SOLENOID,LOW);
-            running = 1;
-          }
-          if (receivedData == '-') {
-            digitalWrite(SOLENOID,HIGH);
-            running = 0;
-          }
+      if (command == 's')
+      {
+        if (receivedData == '+'){
+        digitalWrite(SOLENOID,LOW);
+        running = 1;
         }
-        messageIndex = 0;     // reset index for next command
-        break;
+        if (receivedData == '-') {
+        digitalWrite(SOLENOID,HIGH);
+        running = 0;
+        }
+      }
+      messageIndex = 0;     // reset index for next command
+      break;
     }
   }
 
@@ -257,28 +265,36 @@ by software command from the GUI. */
   if ((switchVal == 0) && (lastSwitchVal > 0)) running = (running++ & 0x01);
   lastSwitchVal = switchVal;
 
+// If the seconds have changed then restart the millisecond counter.
   DateTime now = rtc.now();
   if (now.second() != lastSecond) {
-    timetick = 0;
+    msTime = 0;
     lastSecond = now.second();
   }
  
-  if (running > 0) {
+// Turn on the water valve solenoid when running.
+  if (running == 0)
+    digitalWrite(SOLENOID,HIGH);
+  else
     digitalWrite(SOLENOID,LOW);
 
-    unsigned char reg[8];          // array for all the 8 registers
+// Wait for the number of ms tick intervals to elapse before dumping results
+  if  (cycleTime > 1000*INTERVAL) {
+    cycleTime = 0;
+
+// Access the MAX31625 to get Pt100 resistance reading
+    unsigned char reg[8];      // array for all the 8 registers
     unsigned int i;
 // 16 bit value of RTD MSB & RTD LSB, reg[1] & reg[2]
 // RTDdata >> 1, 0th bit of RTDdata is RTD connection fault detection bit
     unsigned int RTDdata;
 // 15 bit value of ADC
     unsigned int ADCcode;
-    double Resistance;             // actual resistance of PT100(0) sensor
+    double Resistance;         // actual resistance of PT100(0) sensor
 
-// Access the MAX31625 to get Pt100 resistance reading
     digitalWrite(CS, LOW);
     delay(10);
-    SPI.transfer(0);                              // start reading from address=0
+    SPI.transfer(0);           // start reading from address=0
     for (i=0; i<8; i++) reg[i]=SPI.transfer(0);   // read all the 8 registers
     delay(10);
     digitalWrite(CS, HIGH);
@@ -286,90 +302,78 @@ by software command from the GUI. */
     ADCcode=RTDdata>>1;
     Resistance=(double)ADCcode*Rref/32768;
 
-// Wait for 10 cycles of 10ms to transmit results every 100ms.
-    if  (cycleTime++ > 10) {
-    
-      Serial.print(now.year(), DEC);
-      Serial.print('-');
-      if (now.month() < 10) Serial.print('0');
-      Serial.print(now.month(), DEC);
-      Serial.print('-');
-      if (now.day() < 10) Serial.print('0');
-      Serial.print(now.day(), DEC);
-      Serial.print('T');
-      if (now.hour() < 10) Serial.print('0');
-      Serial.print(now.hour(), DEC);
-      Serial.print(':');
-      if (now.minute() < 10) Serial.print('0');
-      Serial.print(now.minute(), DEC);
-      Serial.print(':');
-      if (now.second() < 10) Serial.print('0');
-      Serial.print(now.second(), DEC);
-      Serial.print(".");
-      if (timetick < 100)
-        Serial.print('0');
-      if (timetick < 10)
-        Serial.print('0');
-      Serial.print(timetick, DEC);
-      Serial.print(",");
+    Serial.print(now.year(), DEC);
+    Serial.print('-');
+    if (now.month() < 10) Serial.print('0');
+    Serial.print(now.month(), DEC);
+    Serial.print('-');
+    if (now.day() < 10) Serial.print('0');
+    Serial.print(now.day(), DEC);
+    Serial.print('T');
+    if (now.hour() < 10) Serial.print('0');
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    if (now.minute() < 10) Serial.print('0');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    if (now.second() < 10) Serial.print('0');
+    Serial.print(now.second(), DEC);
+    Serial.print(".");
+    if (msTime < 100)
+      Serial.print('0');
+    if (msTime < 10)
+      Serial.print('0');
+    Serial.print(msTime, DEC);
+    Serial.print(",");
 
 /* Protect and capture flowmeter count and period average values and reset them.
 The flowmeter period is averaged if more than two pulses occur, otherwise
 the last measured period is used. */
-      cli();
-      if (flowmeterCount > 2) {
-        flowmeterPeriod = flowmeterPeriodSum/(flowmeterCount - 1);
-        flowmeterPeriodSum = 0;
-      }
-      int currentFlowCount = flowmeterCount;
-      flowmeterCount = 0;
-      if (watermeterCount > 2) {
-        watermeterPeriod = watermeterPeriodSum/(watermeterCount - 1);
-        watermeterPeriodSum = 0;
-      }
-      int currentWaterCount = watermeterCount;
-      watermeterCount = 0;
-      sei();
+    cli();
+    if (flowmeterCount > 2) {
+      flowmeterPeriod = flowmeterPeriodSum/(flowmeterCount - 1);
+      flowmeterPeriodSum = 0;
+    }
+    int currentFlowCount = flowmeterCount;
+    flowmeterCount = 0;
+    if (watermeterCount > 2) {
+      watermeterPeriod = watermeterPeriodSum/(watermeterCount - 1);
+      watermeterPeriodSum = 0;
+    }
+    int currentWaterCount = watermeterCount;
+    watermeterCount = 0;
+    sei();
 // Print Flowmeter Count
-      Serial.print(currentFlowCount);
-      Serial.print(",");
+    Serial.print(currentFlowCount);
+    Serial.print(",");
 
 // Print flowmeter period last measured.
-      Serial.print(flowmeterPeriod);
-      Serial.print(",");
+    Serial.print(flowmeterPeriod);
+    Serial.print(",");
 
 // Print pressure value
-      Serial.print(analogRead(PRESSURE));
-      Serial.print(",");
+    Serial.print(analogRead(PRESSURE));
+    Serial.print(",");
     
 // Print temperature value
-      Serial.print(CallendarVanDusen(Resistance));
-//      Serial.print(analogRead(TEMPERATURE));
-      Serial.print(",");
+    Serial.print(CallendarVanDusen(Resistance));
+    Serial.print(",");
 
 // Print Watermeter Count
-      Serial.print(currentWaterCount);
-      Serial.print(",");
+    Serial.print(currentWaterCount);
+    Serial.print(",");
 
 // Print watermeter period last measured.
-      Serial.print(watermeterPeriod);
-      Serial.print(",");
+    Serial.print(watermeterPeriod);
+    Serial.print(",");
 
 // Blank field
-      Serial.print(",");
+    Serial.print(",");
 
 // Print running status.
-      Serial.print(running);
-//      Serial.print(",");
+    Serial.print(running);
     
-      Serial.println("");
-
-      cycleTime = 0;
-    }
+    Serial.println("");
   }
-  else
-    digitalWrite(SOLENOID,HIGH);
-// 10ms delay
-  delay(10);
 }
 
