@@ -280,16 +280,16 @@ void TestbenchGui::processResponse(const QString response)
 
     if (size < 3) return;
 /* Flow meter count and period. These are processed further to derive a
-flow rate by selecting the most accurate measure. 
+flow rate in litres per minute by selecting the most accurate measure.
 Datasheet for the FS200A specifies 450 counts per litre.
-Count is number of pulses in 10ms, period is in ms. */
+Count is number of pulses in 1s, period is in ms. */
     int flowMeterCount = breakdown[1].simplified().toInt();
     long flowMeterPeriod = breakdown[2].simplified().toLong();
     float flowMeterRate;
     if (flowMeterCount < 10)
         flowMeterRate = 133.3/flowMeterPeriod;
     else
-        flowMeterRate = 1.333*flowMeterCount;
+        flowMeterRate = 0.1333*flowMeterCount;
     TestbenchMainUi.flowRate->setText(QString("%1").arg(flowMeterRate,0,'f',1));
     line += QString("%1").arg(flowMeterRate,10,'f',1);
 
@@ -316,9 +316,9 @@ count value with the best accuracy. */
     long waterMeterPeriod = breakdown[6].simplified().toLong();
     float waterMeterRate;
     if (waterMeterCount < 10)
-        waterMeterRate = 100.0/waterMeterPeriod;
+        waterMeterRate = 102.9/waterMeterPeriod;
     else
-        waterMeterRate = 1.0*waterMeterCount;
+        waterMeterRate = 0.1029*waterMeterCount;
     TestbenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
     line += QString("%1").arg(waterMeterRate,10,'f',1);
 qDebug() << line;
