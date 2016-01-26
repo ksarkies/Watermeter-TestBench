@@ -60,7 +60,7 @@ RTC_DS1307 rtc;
 
 #define INTERVAL    1   // Interval between measurements in seconds
 #define Rref      400   // 400 if PT100 used, enter 4000 if PT1000 used
-#define WIRE      2     // PT100/1000 has 2,3 or 4 wire connection
+#define WIRE        2   // PT100/1000 has 2,3 or 4 wire connection
 
 #define CS 9
 
