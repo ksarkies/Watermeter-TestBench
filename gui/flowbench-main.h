@@ -1,4 +1,4 @@
-/*          Testbench GUI Main Window Header
+/*          FlowBench GUI Main Window Header
 
 @date 18 February 2015
 */
@@ -7,20 +7,20 @@
  *   Copyright (C) 2015 by Ken Sarkies                                      *
  *   ksarkies@internode.on.net                                              *
  *                                                                          *
- *   This file is part of Testbench                                         *
+ *   This file is part of FlowBench                                         *
  *                                                                          *
- *   Testbench is free software; you can redistribute it and/or             *
+ *   FlowBench is free software; you can redistribute it and/or             *
  *   modify it under the terms of the GNU General Public License as         *
  *   published by the Free Software Foundation; either version 2 of the     *
  *   License, or (at your option) any later version.                        *
  *                                                                          *
- *   Testbench is distributed in the hope that it will be useful,           *
+ *   FlowBench is distributed in the hope that it will be useful,           *
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
  *   GNU General Public License for more details.                           *
  *                                                                          *
  *   You should have received a copy of the GNU General Public License      *
- *   along with testbench.                                                  *
+ *   along with flowbench.                                                  *
  *   If not, write to the Free Software Foundation, Inc.,                   *
  *   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.              *
  ***************************************************************************/
@@ -28,8 +28,8 @@
 #ifndef TESTBENCH_MAIN_H
 #define TESTBENCH_MAIN_H
 
-#include "ui_testbench-main.h"
-#include "testbench.h"
+#include "ui_flowbench-main.h"
+#include "flowbench.h"
 #include "serialport.h"
 #include <QDir>
 #include <QFile>
@@ -42,16 +42,16 @@
 #define BAUDRATE2 2
 
 //-----------------------------------------------------------------------------
-/** @brief Testbench Main Window.
+/** @brief FlowBench Main Window.
 
 */
 
-class TestbenchGui : public QDialog
+class FlowBenchGui : public QDialog
 {
     Q_OBJECT
 public:
-    TestbenchGui(QWidget* parent = 0);
-    ~TestbenchGui();
+    FlowBenchGui(QWidget* parent = 0);
+    ~FlowBenchGui();
     bool success();
     QString error();
 private slots:
@@ -64,7 +64,7 @@ private slots:
     void on_connect2_clicked();
 private:
 // User Interface object instance
-    Ui::WatermeterTestbenchDialog TestbenchMainUi;
+    Ui::WatermeterFlowBenchDialog FlowBenchMainUi;
 // Methods
     void displayErrorMessage(const QString message);
     void processResponse(const QString response);

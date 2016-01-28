@@ -1,4 +1,4 @@
-/*       Testbench GUI Main Window
+/*       FlowBench GUI Main Window
 
 Here the data stream from the test microcontroller is received and saved to a
 file
@@ -10,14 +10,14 @@ file
  *   Copyright (C) 2015 by Ken Sarkies                                      *
  *   ksarkies@internode.on.net                                              *
  *                                                                          *
- *   This file is part of Testbench                                         *
+ *   This file is part of FlowBench                                         *
  *                                                                          *
- *   Testbench is free software; you can redistribute it and/or             *
+ *   FlowBench is free software; you can redistribute it and/or             *
  *   modify it under the terms of the GNU General Public License as         *
  *   published by the Free Software Foundation; either version 2 of the     *
  *   License, or (at your option) any later version.                        *
  *                                                                          *
- *   Testbench is distributed in the hope that it will be useful,           *
+ *   FlowBench is distributed in the hope that it will be useful,           *
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
  *   GNU General Public License for more details.                           *
@@ -28,8 +28,8 @@ file
  *   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.              *
  ***************************************************************************/
 
-#include "testbench.h"
-#include "testbench-main.h"
+#include "flowbench.h"
+#include "flowbench-main.h"
 #include "serialport.h"
 #include <QApplication>
 #include <QString>
@@ -49,24 +49,24 @@ file
 #include <unistd.h>
 
 //-----------------------------------------------------------------------------
-/** Testbench Main Window Constructor
+/** FlowBench Main Window Constructor
 
 @param[in] parent Parent widget.
 */
 
-TestbenchGui::TestbenchGui(QWidget* parent) : QDialog(parent)
+FlowBenchGui::FlowBenchGui(QWidget* parent) : QDialog(parent)
 {
-    TestbenchMainUi.setupUi(this);
+    FlowBenchMainUi.setupUi(this);
     setComboBoxes();
 
-    TestbenchMainUi.startPushButton->setText("Start");
-    TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+    FlowBenchMainUi.startPushButton->setText("Start");
+    FlowBenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
     recordingActive = false;
     socket1 = NULL;
     socket2 = NULL;
 }
 
-TestbenchGui::~TestbenchGui()
+FlowBenchGui::~FlowBenchGui()
 {
 }
 
@@ -77,43 +77,43 @@ Test existence of serial port (ACM and USB) and build both combobox entries.
 Different ports are checked on Windows and Linux.
 */
 
-void TestbenchGui::setComboBoxes()
+void FlowBenchGui::setComboBoxes()
 {
     QString port;
-    TestbenchMainUi.input1ComboBox->clear();
-    TestbenchMainUi.input2ComboBox->clear();
+    FlowBenchMainUi.input1ComboBox->clear();
+    FlowBenchMainUi.input2ComboBox->clear();
 #ifdef Q_OS_LINUX
     port = "/dev/ttyS0";
-    TestbenchMainUi.input1ComboBox->insertItem(0,port);
+    FlowBenchMainUi.input1ComboBox->insertItem(0,port);
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyUSB"+QString::number(i);
         QFileInfo checkUSBFile1(port);
         if (checkUSBFile1.exists())
-            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input1ComboBox->insertItem(0,port);
     }
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyACM"+QString::number(i);
         QFileInfo checkACMFile1(port);
         if (checkACMFile1.exists())
-            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input1ComboBox->insertItem(0,port);
     }
     port = "/dev/ttyS0";
-    TestbenchMainUi.input2ComboBox->insertItem(0,port);
+    FlowBenchMainUi.input2ComboBox->insertItem(0,port);
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyACM"+QString::number(i);
         QFileInfo checkACMFile2(port);
         if (checkACMFile2.exists())
-            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input2ComboBox->insertItem(0,port);
     }
     for (int i=3; i>=0; i--)
     {
         port = "/dev/ttyUSB"+QString::number(i);
         QFileInfo checkUSBFile2(port);
         if (checkUSBFile2.exists())
-            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input2ComboBox->insertItem(0,port);
     }
 #else
     for (int i=3; i>=0; i--)
@@ -121,25 +121,25 @@ void TestbenchGui::setComboBoxes()
         port = "COM"+QString::number(i+3);
         QFileInfo checkACMFile1(port);
         if (checkACMFile1.exists())
-            TestbenchMainUi.input1ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input1ComboBox->insertItem(0,port);
     }
     for (int i=3; i>=0; i--)
     {
         port = "COM"+QString::number(i+3);
         QFileInfo checkUSBFile2(port);
         if (checkUSBFile2.exists())
-            TestbenchMainUi.input2ComboBox->insertItem(0,port);
+            FlowBenchMainUi.input2ComboBox->insertItem(0,port);
     }
 #endif
-    TestbenchMainUi.input1ComboBox->setCurrentIndex(0);
-    TestbenchMainUi.input2ComboBox->setCurrentIndex(0);
+    FlowBenchMainUi.input1ComboBox->setCurrentIndex(0);
+    FlowBenchMainUi.input2ComboBox->setCurrentIndex(0);
 
     QStringList baudrates;
     baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
-    TestbenchMainUi.baudrate1ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE1);
-    TestbenchMainUi.baudrate2ComboBox->addItems(baudrates);
-    TestbenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE2);
+    FlowBenchMainUi.baudrate1ComboBox->addItems(baudrates);
+    FlowBenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE1);
+    FlowBenchMainUi.baudrate2ComboBox->addItems(baudrates);
+    FlowBenchMainUi.baudrate2ComboBox->setCurrentIndex(BAUDRATE2);
 }
 
 //-----------------------------------------------------------------------------
@@ -147,9 +147,9 @@ void TestbenchGui::setComboBoxes()
 
 */
 
-void TestbenchGui::on_connect1_clicked()
+void FlowBenchGui::on_connect1_clicked()
 {
-    QString inPort1 = TestbenchMainUi.input1ComboBox->currentText();
+    QString inPort1 = FlowBenchMainUi.input1ComboBox->currentText();
     baudrate1 = BAUDRATE1;
 
     if (socket1 != NULL)
@@ -157,14 +157,14 @@ void TestbenchGui::on_connect1_clicked()
         disconnect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
         delete socket1;
         socket1 = NULL;
-        TestbenchMainUi.connect1->setText("Connect");
+        FlowBenchMainUi.connect1->setText("Connect");
     }
     else
     {
         socket1 = new SerialPort(inPort1);
         connect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
         socket1->initPort(baudrate1,100);
-        TestbenchMainUi.connect1->setText("Disconnect");
+        FlowBenchMainUi.connect1->setText("Disconnect");
     }
     setComboBoxes();        // Rebuild combobox entries
 }
@@ -174,9 +174,9 @@ void TestbenchGui::on_connect1_clicked()
 
 */
 
-void TestbenchGui::on_connect2_clicked()
+void FlowBenchGui::on_connect2_clicked()
 {
-    QString inPort2 = TestbenchMainUi.input2ComboBox->currentText();
+    QString inPort2 = FlowBenchMainUi.input2ComboBox->currentText();
     baudrate2 = BAUDRATE2;
 
     if (socket2 != NULL)
@@ -184,14 +184,14 @@ void TestbenchGui::on_connect2_clicked()
         disconnect(socket2, SIGNAL(readyRead()), this, SLOT(onData2Available()));
         delete socket2;
         socket2 = NULL;
-        TestbenchMainUi.connect2->setText("Connect");
+        FlowBenchMainUi.connect2->setText("Connect");
     }
     else
     {
         socket2 = new SerialPort(inPort2);
         connect(socket2, SIGNAL(readyRead()), this, SLOT(onData2Available()));
         socket2->initPort(baudrate2,100);
-        TestbenchMainUi.connect2->setText("Disconnect");
+        FlowBenchMainUi.connect2->setText("Disconnect");
     }
     setComboBoxes();        // Rebuild combobox entries
 }
@@ -203,7 +203,7 @@ This is called when data appears in the serial buffer. Data is pulled in until
 a newline occurs, at which point the assembled data record QString is processed.
 */
 
-void TestbenchGui::onData1Available()
+void FlowBenchGui::onData1Available()
 {
     QByteArray data = socket1->readAll();
     int n=0;
@@ -219,7 +219,7 @@ void TestbenchGui::onData1Available()
             QString timeString = QDateTime::currentDateTime().time().toString(Qt::ISODate);
             QString msString = QString("%1")
                     .arg(QDateTime::currentDateTime().time().msec()/10,2,10,QLatin1Char('0'));
-            TestbenchMainUi.timeDisplay->setText(timeString+"."+msString);
+            FlowBenchMainUi.timeDisplay->setText(timeString+"."+msString);
 /* Save the response with timestamp stripped and replaced with local time. */
             QString line = timeString+','+msString+','+response1.mid(response1.indexOf(",")+1);
             if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
@@ -236,7 +236,7 @@ This is called when data appears in the serial buffer. Data is pulled in until
 a newline occurs, at which point the assembled data record QString is processed.
 */
 
-void TestbenchGui::onData2Available()
+void FlowBenchGui::onData2Available()
 {
     QByteArray data = socket2->readAll();
     int n=0;
@@ -266,7 +266,7 @@ void TestbenchGui::onData2Available()
 Parse the line as csv and display each field.
 */
 
-void TestbenchGui::processResponse(const QString response)
+void FlowBenchGui::processResponse(const QString response)
 {
     QString line;
     QStringList breakdown = response.split(",");
@@ -276,7 +276,7 @@ void TestbenchGui::processResponse(const QString response)
 // Extract time from ISO 8601 formatted date-time.
     QString timeStamp = breakdown[0].simplified();
     line = QString("%1").arg(timeStamp,30);
-//    TestbenchMainUi.timeDisplay->setText(timeStamp.mid(11,8));
+//    FlowBenchMainUi.timeDisplay->setText(timeStamp.mid(11,8));
 
     if (size < 3) return;
 /* Flow meter count and period. These are processed further to derive a
@@ -290,7 +290,7 @@ Count is number of pulses in 1s, period is in ms. */
         flowMeterRate = 133.3/flowMeterPeriod;
     else
         flowMeterRate = 0.1333*flowMeterCount;
-    TestbenchMainUi.flowRate->setText(QString("%1").arg(flowMeterRate,0,'f',1));
+    FlowBenchMainUi.flowRate->setText(QString("%1").arg(flowMeterRate,0,'f',1));
     line += QString("%1").arg(flowMeterRate,10,'f',1);
 
     if (size < 4) return;
@@ -298,7 +298,7 @@ Count is number of pulses in 1s, period is in ms. */
 Results given in ATM */
     int pressval = breakdown[3].simplified().toInt();
     float pressure = 3.0*(5.0*(float)pressval/1024.0-0.5);
-    TestbenchMainUi.pressure->setText(QString("%1").arg(pressure,0,'f',3));
+    FlowBenchMainUi.pressure->setText(QString("%1").arg(pressure,0,'f',3));
     line += QString("%1").arg(pressure,10,'f',1);
 
     if (size < 5) return;
@@ -306,7 +306,7 @@ Results given in ATM */
 //    int tempval = breakdown[4].simplified().toInt();
 //    float temperature = 26.0+((float)tempval-716.0)/15.07;
     float temperature = breakdown[4].simplified().toFloat();
-    TestbenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',2));
+    FlowBenchMainUi.temperature->setText(QString("%1").arg(temperature,0,'f',2));
     line += QString("%1").arg(temperature,10,'f',1);
 
     if (size < 7) return;
@@ -319,11 +319,11 @@ count value with the best accuracy. */
         waterMeterRate = 102.9/waterMeterPeriod;
     else
         waterMeterRate = 0.1029*waterMeterCount;
-    TestbenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
+    FlowBenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
     line += QString("%1").arg(waterMeterRate,10,'f',1);
 qDebug() << line;
-    TestbenchMainUi.displayListWidget->addItem(line);
-    TestbenchMainUi.displayListWidget->scrollToBottom();
+    FlowBenchMainUi.displayListWidget->addItem(line);
+    FlowBenchMainUi.displayListWidget->scrollToBottom();
 }
 
 //-----------------------------------------------------------------------------
@@ -332,24 +332,24 @@ qDebug() << line;
 Only works on socket 1, which should be set to the Arduino.
 */
 
-void TestbenchGui::on_startPushButton_clicked()
+void FlowBenchGui::on_startPushButton_clicked()
 {
     SerialPort* socket = NULL;
     if (socket1 != NULL) socket = socket1;
     else if (socket2 != NULL) socket = socket2;
     if (socket != NULL)
     {
-        recordingActive = (TestbenchMainUi.startPushButton->text() == "Start");
+        recordingActive = (FlowBenchMainUi.startPushButton->text() == "Start");
         if (recordingActive)
         {
-            TestbenchMainUi.startPushButton->setText("Stop");
-            TestbenchMainUi.startPushButton->setStyleSheet("background-color:pink;");
+            FlowBenchMainUi.startPushButton->setText("Stop");
+            FlowBenchMainUi.startPushButton->setStyleSheet("background-color:pink;");
             socket->write("As+\n\r");
         }
         else
         {
-            TestbenchMainUi.startPushButton->setText("Start");
-            TestbenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
+            FlowBenchMainUi.startPushButton->setText("Start");
+            FlowBenchMainUi.startPushButton->setStyleSheet("background-color:lightgreen;");
             socket->write("As-\n\r");
         }
     }
@@ -362,7 +362,7 @@ The files are csv but the ending can be arbitrary to allow compatibility
 with the data processing application.
 */
 
-void TestbenchGui::on_saveFileButton_clicked()
+void FlowBenchGui::on_saveFileButton_clicked()
 {
 //! Make sure there is no file already open.
     if (! saveFile.isEmpty())
@@ -370,7 +370,7 @@ void TestbenchGui::on_saveFileButton_clicked()
         displayErrorMessage("A file is already open - close first");
         return;
     }
-    TestbenchMainUi.errorLabel->clear();
+    FlowBenchMainUi.errorLabel->clear();
     QString filename = QFileDialog::getSaveFileName(this,
                         "Save Acquired Data",
                         QString(),
@@ -392,7 +392,7 @@ void TestbenchGui::on_saveFileButton_clicked()
 /** @brief Save a line to the opened save file.
 
 */
-void TestbenchGui::saveLine(QString line)
+void FlowBenchGui::saveLine(QString line)
 {
 //! Check that the save file has been defined and is open.
     if (saveFile.isEmpty())
@@ -419,9 +419,9 @@ void TestbenchGui::saveLine(QString line)
 /** @brief Close the save file.
 
 */
-void TestbenchGui::on_closeFileButton_clicked()
+void FlowBenchGui::on_closeFileButton_clicked()
 {
-    TestbenchMainUi.errorLabel->clear();
+    FlowBenchMainUi.errorLabel->clear();
     if (saveFile.isEmpty())
         displayErrorMessage("File already closed");
     else
@@ -439,9 +439,9 @@ void TestbenchGui::on_closeFileButton_clicked()
 @param[in] message: Message to be displayed.
 */
 
-void TestbenchGui::displayErrorMessage(const QString message)
+void FlowBenchGui::displayErrorMessage(const QString message)
 {
-    TestbenchMainUi.errorLabel->setText(message);
+    FlowBenchMainUi.errorLabel->setText(message);
 }
 
 //-----------------------------------------------------------------------------
@@ -449,7 +449,7 @@ void TestbenchGui::displayErrorMessage(const QString message)
 
 @returns a message when the device didn't respond.
 */
-QString TestbenchGui::error()
+QString FlowBenchGui::error()
 {
     return errorMessage;
 }
@@ -459,7 +459,7 @@ QString TestbenchGui::error()
 
 @returns TRUE if successful.
 */
-bool TestbenchGui::success()
+bool FlowBenchGui::success()
 {
     return true;
 }

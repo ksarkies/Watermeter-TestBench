@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>WatermeterTestbenchDialog</class>
- <widget class="QDialog" name="WatermeterTestbenchDialog">
+ <class>WatermeterFlowBenchDialog</class>
+ <widget class="QDialog" name="WatermeterFlowBenchDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -42,7 +42,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Watermeter Test Bench</string>
+    <string>Watermeter Flow Bench</string>
    </property>
   </widget>
   <widget class="QLabel" name="flowRate">

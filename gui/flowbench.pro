@@ -1,4 +1,4 @@
-PROJECT =       Testbench GUI
+PROJECT =       FlowBench GUI
 TEMPLATE =      app
 TARGET          += 
 DEPENDPATH      += .
@@ -13,10 +13,10 @@ LANGUAGE        = C++
 CONFIG          += qt warn_on release
 
 # Input
-FORMS           += testbench-main.ui
-HEADERS         += testbench-main.h
+FORMS           += flowbench-main.ui
+HEADERS         += flowbench-main.h
 HEADERS         += serialport.h
-SOURCES         += testbench.cpp
-SOURCES         += testbench-main.cpp
+SOURCES         += flowbench.cpp
+SOURCES         += flowbench-main.cpp
 SOURCES         += serialport.cpp
 
