@@ -16,7 +16,6 @@
 *-
 *.map
 *.log
-*.pdf
 *.tag
 *.lss
 *.csv

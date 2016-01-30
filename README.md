@@ -1,7 +1,7 @@
-Watermeter Testbench
-====================
+Watermeter Flow Bench
+=====================
 
-The testbench provides regulated water flows and electronics for testing the
+The flow bench provides regulated water flows and electronics for testing the
 watermeter. It consists of the sensors listed below. An interface board
 allows the debug connector on the watermeter to pass out various signals,
 including the squared photosensor signal and the serial output. It also
@@ -28,7 +28,7 @@ The watermeter used is that for the XBee-Acquisition project
 (https://github.com/ksarkies/XBee-Acquisition).
 It is programmed to count pulses and transmit the resulting count once a second
 via its serial interface. This is converted to RS232 in the interface board
-on the testbench for passing to a PC.
+on the flow bench for passing to a PC.
 
 A GUI is provided to allow the Arduino and the Watermeter serial interfaces to
 pass data to be displayed and stored.
