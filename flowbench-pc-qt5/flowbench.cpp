@@ -1,6 +1,16 @@
-/*          FlowBench GUI Main Window Header
-
+/**
+@mainpage Watermeter FlowBench GUI
+@version 1.0
+@author Ken Sarkies (www.jiggerjuice.net)
 @date 18 February 2015
+
+This is a control GUI for a water flowbench to test and calibrate the
+Xerofill watermeter.
+
+@note
+Compiler: gcc (Ubuntu 4.8.2-19ubuntu1) 4.8.2
+@note
+Uses: Qt version 4.8.6
 */
 
 /****************************************************************************
@@ -25,66 +35,26 @@
  *   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.              *
  ***************************************************************************/
 
-#ifndef TESTBENCH_MAIN_H
-#define TESTBENCH_MAIN_H
-
-#include "ui_flowbench-main.h"
-#include "serialport.h"
-#include <QDir>
-#include <QFile>
-#include <QTime>
-#include <QCloseEvent>
-
-// Particular serial port to use
-#define SERIAL_PORT "/dev/ttyACM0"
-#define BAUDRATE1 4
-#define BAUDRATE2 2
+#include <QApplication>
+#include <QMessageBox>
+#include "flowbench-main.h"
 
 //-----------------------------------------------------------------------------
-/** @brief FlowBench Main Window.
+/** @brief FlowBench GUI Main Program
 
 */
 
-class FlowBenchGui : public QDialog
+int main(int argc,char ** argv)
 {
-    Q_OBJECT
-public:
-    FlowBenchGui(QWidget* parent = 0);
-    ~FlowBenchGui();
-    bool success();
-    QString error();
-private slots:
-    void onData1Available();
-    void onData2Available();
-    void on_saveFileButton_clicked();
-    void on_closeFileButton_clicked();
-    void on_startPushButton_clicked();
-    void on_connect1_clicked();
-    void on_connect2_clicked();
-private:
-// User Interface object instance
-    Ui::WatermeterFlowBenchDialog FlowBenchMainUi;
-// Methods
-    void displayErrorMessage(const QString message);
-    void processResponse(const QString response);
-    void saveLine(QString line);    // Save line to a file
-    void setComboBoxes();
-// Variables
-    SerialPort* socket1;            //!< Serial port object pointer
-    uint baudrate1;
-    QString response1;
-    SerialPort* socket2;            //!< Serial port object pointer
-    uint baudrate2;
-    QString response2;
-    quint16 blockSize;
-    QTime tick;
-    QDir saveDirectory;
-    QString saveFile;
-    QFile* outFile;
-    bool recordingActive;
-    bool synchronized;
-    QString errorMessage;
-    char timeTick;
-};
-
-#endif
+    QApplication application(argc,argv);
+    FlowBenchGui flowbenchGui;
+    if (flowbenchGui.success())
+    {
+        flowbenchGui.show();
+        return application.exec();
+    }
+    else
+        QMessageBox::critical(0,"Unable to connect to remote system",
+              QString("%1").arg(flowbenchGui.error()));
+    return false;
+}

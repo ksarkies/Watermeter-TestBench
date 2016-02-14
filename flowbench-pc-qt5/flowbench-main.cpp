@@ -28,8 +28,6 @@ file
  *   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.              *
  ***************************************************************************/
 
-#include "flowbench-main.h"
-#include "serialport.h"
 #include <QApplication>
 #include <QString>
 #include <QLineEdit>
@@ -42,11 +40,15 @@ file
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QDebug>
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#include "flowbench-main.h"
 
+const qint32 bauds[8] = {1200,2400,4800,9600,19200,38400,57600,115200};
 //-----------------------------------------------------------------------------
 /** FlowBench Main Window Constructor
 
@@ -134,7 +136,8 @@ void FlowBenchGui::setComboBoxes()
     FlowBenchMainUi.input2ComboBox->setCurrentIndex(0);
 
     QStringList baudrates;
-    baudrates << "2400" << "4800" << "9600" << "19200" << "38400" << "57600" << "115200";
+    baudrates << "1200" <<"2400" << "4800" << "9600" << "19200" << "38400"
+              << "57600" << "115200";
     FlowBenchMainUi.baudrate1ComboBox->addItems(baudrates);
     FlowBenchMainUi.baudrate1ComboBox->setCurrentIndex(BAUDRATE1);
     FlowBenchMainUi.baudrate2ComboBox->addItems(baudrates);
@@ -142,7 +145,7 @@ void FlowBenchGui::setComboBoxes()
 }
 
 //-----------------------------------------------------------------------------
-/** @brief Connect to selected serial port 1
+/** @brief Connect to or Disconnect from selected serial port 1
 
 */
 
@@ -151,6 +154,7 @@ void FlowBenchGui::on_connect1_clicked()
     QString inPort1 = FlowBenchMainUi.input1ComboBox->currentText();
     baudrate1 = BAUDRATE1;
 
+// If connected, button should show "Disconnect". Delete and reset button.
     if (socket1 != NULL)
     {
         disconnect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
@@ -158,12 +162,21 @@ void FlowBenchGui::on_connect1_clicked()
         socket1 = NULL;
         FlowBenchMainUi.connect1->setText("Connect");
     }
+// If not connected button should show "Connect"
     else
     {
-        socket1 = new SerialPort(inPort1);
+        socket1 = new QSerialPort(inPort1);
         connect(socket1, SIGNAL(readyRead()), this, SLOT(onData1Available()));
-        socket1->initPort(baudrate1,100);
-        FlowBenchMainUi.connect1->setText("Disconnect");
+        bool ok = socket1->open(QIODevice::ReadWrite);
+        if (ok)
+        {
+            socket1->setBaudRate(bauds[baudrate1]);
+            socket1->setDataBits(QSerialPort::Data8);
+            socket1->setParity(QSerialPort::NoParity);
+            socket1->setStopBits(QSerialPort::OneStop);
+            socket1->setFlowControl(QSerialPort::NoFlowControl);
+            FlowBenchMainUi.connect1->setText("Disconnect");
+        }
     }
     setComboBoxes();        // Rebuild combobox entries
 }
@@ -187,10 +200,18 @@ void FlowBenchGui::on_connect2_clicked()
     }
     else
     {
-        socket2 = new SerialPort(inPort2);
+        socket2 = new QSerialPort(inPort2);
         connect(socket2, SIGNAL(readyRead()), this, SLOT(onData2Available()));
-        socket2->initPort(baudrate2,100);
-        FlowBenchMainUi.connect2->setText("Disconnect");
+        bool ok = socket2->open(QIODevice::ReadWrite);
+        if (ok)
+        {
+            socket2->setBaudRate(bauds[baudrate1]);
+            socket2->setDataBits(QSerialPort::Data8);
+            socket2->setParity(QSerialPort::NoParity);
+            socket2->setStopBits(QSerialPort::OneStop);
+            socket2->setFlowControl(QSerialPort::NoFlowControl);
+            FlowBenchMainUi.connect2->setText("Disconnect");
+        }
     }
     setComboBoxes();        // Rebuild combobox entries
 }
@@ -333,7 +354,7 @@ Only works on socket 1, which should be set to the Arduino.
 
 void FlowBenchGui::on_startPushButton_clicked()
 {
-    SerialPort* socket = NULL;
+    QSerialPort* socket = NULL;
     if (socket1 != NULL) socket = socket1;
     else if (socket2 != NULL) socket = socket2;
     if (socket != NULL)

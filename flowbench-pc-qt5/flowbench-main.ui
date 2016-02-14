@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WatermeterFlowBenchDialog</class>
+ <widget class="QDialog" name="WatermeterFlowBenchDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>620</width>
+    <height>607</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QPushButton" name="closeFileButton">
+   <property name="geometry">
+    <rect>
+     <x>309</x>
+     <y>215</y>
+     <width>90</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="title">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>10</y>
+     <width>309</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Andale Mono</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Watermeter Flow Bench</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="flowRate">
+   <property name="geometry">
+    <rect>
+     <x>302</x>
+     <y>95</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pressure">
+   <property name="geometry">
+    <rect>
+     <x>194</x>
+     <y>95</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="meterFlowLabel">
+   <property name="geometry">
+    <rect>
+     <x>416</x>
+     <y>155</y>
+     <width>87</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Watermeter</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="temperature">
+   <property name="geometry">
+    <rect>
+     <x>86</x>
+     <y>95</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="flowRateLabel">
+   <property name="geometry">
+    <rect>
+     <x>304</x>
+     <y>155</y>
+     <width>95</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Flow Rate l/m</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="startPushButton">
+   <property name="geometry">
+    <rect>
+     <x>255</x>
+     <y>180</y>
+     <width>77</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="saveFileButton">
+   <property name="geometry">
+    <rect>
+     <x>195</x>
+     <y>215</y>
+     <width>90</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="timeDisplay">
+   <property name="geometry">
+    <rect>
+     <x>225</x>
+     <y>50</y>
+     <width>149</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="temperatureLabel">
+   <property name="geometry">
+    <rect>
+     <x>78</x>
+     <y>155</y>
+     <width>103</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Temperature C</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="meterFlow">
+   <property name="geometry">
+    <rect>
+     <x>410</x>
+     <y>95</y>
+     <width>95</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::Box</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="pressureLabel">
+   <property name="geometry">
+    <rect>
+     <x>190</x>
+     <y>155</y>
+     <width>103</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Pressure (ATM)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="errorLabel">
+   <property name="geometry">
+    <rect>
+     <x>74</x>
+     <y>421</y>
+     <width>473</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="input1ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>38</x>
+     <y>215</y>
+     <width>129</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="connect1">
+   <property name="geometry">
+    <rect>
+     <x>54</x>
+     <y>180</y>
+     <width>95</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="input2ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>424</x>
+     <y>215</y>
+     <width>129</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="connect2">
+   <property name="geometry">
+    <rect>
+     <x>436</x>
+     <y>180</y>
+     <width>101</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="baudrate1ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>55</x>
+     <y>250</y>
+     <width>87</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="baudrate2ComboBox">
+   <property name="geometry">
+    <rect>
+     <x>440</x>
+     <y>250</y>
+     <width>87</width>
+     <height>29</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="connect1Label">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>285</y>
+     <width>59</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Arduino</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="connect2Label">
+   <property name="geometry">
+    <rect>
+     <x>465</x>
+     <y>285</y>
+     <width>47</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Other</string>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="displayListWidget">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>305</y>
+     <width>581</width>
+     <height>281</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
