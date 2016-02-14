@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>620</width>
-    <height>607</height>
+    <height>625</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -366,11 +366,40 @@
   <widget class="QListWidget" name="displayListWidget">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>305</y>
+     <x>15</x>
+     <y>300</y>
      <width>581</width>
-     <height>281</height>
+     <height>306</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="debugCheckBox">
+   <property name="geometry">
+    <rect>
+     <x>285</x>
+     <y>265</y>
+     <width>21</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="connect2Label_2">
+   <property name="geometry">
+    <rect>
+     <x>275</x>
+     <y>285</y>
+     <width>47</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Debug</string>
    </property>
   </widget>
  </widget>

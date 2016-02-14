@@ -275,7 +275,7 @@ void FlowBenchGui::onData2Available()
             QString line = timeString+','+msString+','+response2.mid(response2.indexOf(",")+1);
             if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
             response2.clear();
-qDebug() << line;
+            if (FlowBenchMainUi.debugCheckBox->isChecked()) qDebug() << line;
         }
         n++;
     }
@@ -342,7 +342,7 @@ count value with the best accuracy. */
         waterMeterRate = 0.1029*waterMeterCount;
     FlowBenchMainUi.meterFlow->setText(QString("%1").arg(waterMeterRate,0,'f',1));
     line += QString("%1").arg(waterMeterRate,10,'f',1);
-qDebug() << line;
+    if (FlowBenchMainUi.debugCheckBox->isChecked()) qDebug() << line;
     FlowBenchMainUi.displayListWidget->addItem(line);
     FlowBenchMainUi.displayListWidget->scrollToBottom();
 }
