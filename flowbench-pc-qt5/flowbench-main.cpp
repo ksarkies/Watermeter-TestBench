@@ -205,7 +205,7 @@ void FlowBenchGui::on_connect2_clicked()
         bool ok = socket2->open(QIODevice::ReadWrite);
         if (ok)
         {
-            socket2->setBaudRate(bauds[baudrate1]);
+            socket2->setBaudRate(bauds[baudrate2]);
             socket2->setDataBits(QSerialPort::Data8);
             socket2->setParity(QSerialPort::NoParity);
             socket2->setStopBits(QSerialPort::OneStop);
@@ -275,6 +275,7 @@ void FlowBenchGui::onData2Available()
             QString line = timeString+','+msString+','+response2.mid(response2.indexOf(",")+1);
             if ((! saveFile.isEmpty()) && recordingActive) saveLine(line);
             response2.clear();
+qDebug() << line;
         }
         n++;
     }
