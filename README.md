@@ -24,8 +24,7 @@ Sensors are:
 * Chronodot real-time clock based on the DS3231 RTC chip.
 * Watermeter photointerrupter output from comparator.
 
-The watermeter used is that for the XBee-Acquisition project
-(https://github.com/ksarkies/XBee-Acquisition).
+The watermeter used is that for the [XBee-Acquisition project](https://github.com/ksarkies/XBee-Acquisition).
 It is programmed to count pulses and transmit the resulting count once a second
 via its serial interface. This is converted to RS232 in the interface board
 on the flow bench for passing to a PC.
@@ -45,7 +44,7 @@ Tests to be done are:
 The code is for the Arduino IDE. It requires an additional subfolder "libraries"
 with the following libraries:
 
-* "RTClib" for the Chronodot RTC https://github.com/adafruit/RTClib
+* "[RTClib](https://github.com/adafruit/RTClib)" for the Chronodot RTC
 
 K. Sarkies, 26/1/2016
 
